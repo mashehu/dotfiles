@@ -1,4 +1,4 @@
--e - clean: ['~']
+- clean: ['~']
 
 - link:
     ~/.bash_profile: bash_profile
