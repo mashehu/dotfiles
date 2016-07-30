@@ -1,8 +1,16 @@
+#!/usr/bin/zsh
+
 #load antigen
 ZSHA_BASE=$HOME/.zsh-antigen
 source $ZSHA_BASE/antigen/antigen.zsh
 fpath=(/usr/local/share/zsh-completions $fpath)
 ttyctl -f #fixes error where the terminal confuses enter with return (prints ^M)
+
+#less syntax-highlighting
+LESSPIPE=`which src-hilite-lesspipe.sh`
+export LESSOPEN="| ${LESSPIPE} %s"
+export LESS=' -R -X -F '
+
 
 # Load the oh-my-zsh's library.
 antigen use oh-my-zsh
