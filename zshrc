@@ -1,11 +1,12 @@
 #!/usr/bin/zsh
 
+
 #load antigen
 ZSHA_BASE=$HOME/.zsh-antigen
 source $ZSHA_BASE/antigen/antigen.zsh
 fpath=(/usr/local/share/zsh-completions $fpath)
 ttyctl -f #fixes error where the terminal confuses enter with return (prints ^M)
-
+export $EDITOR=atom
 #less syntax-highlighting
 LESSPIPE=`which src-hilite-lesspipe.sh`
 export LESSOPEN="| ${LESSPIPE} %s"
@@ -25,11 +26,13 @@ antigen bundle common-aliases
 antigen bundle npm
 antigen bundle osx
 antigen bundle web-search
+
 antigen bundle djui/alias-tips
 antigen bundle zsh-users/zsh-completions src #more completions
 antigen bundle zsh-users/zsh-autosuggestions #proposes transparent suggestions based on command history
 antigen bundle zsh-users/zsh-syntax-highlighting
 antigen bundle zsh-users/zsh-history-substring-search
+antigen bundle wbinglee/zsh-wakatime
 HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_FOUND='bg=green,fg=black,bold' #define colors for found items
 
 
