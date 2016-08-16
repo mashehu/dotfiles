@@ -26,6 +26,7 @@ antigen bundle common-aliases
 antigen bundle npm
 antigen bundle osx
 antigen bundle web-search
+antigen bundle colored-man-pages
 
 antigen bundle djui/alias-tips
 antigen bundle zsh-users/zsh-completions src #more completions
