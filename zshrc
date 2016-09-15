@@ -1,5 +1,7 @@
 #!/usr/bin/zsh
 
+TERM="xterm-256color"
+
 
 #load antigen
 ZSHA_BASE=$HOME/.zsh-antigen
@@ -49,7 +51,7 @@ HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_FOUND='bg=green,fg=black,bold' #define colors
 # BULLETTRAIN_VIRTUALENV_PREFIX=🏖
 # BULLETTRAIN_PROMPT_CHAR="❯"
 antigen theme bhilburn/powerlevel9k powerlevel9k
-POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(context dir virtualenv)
+POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(context dir virtualenv vcs)
 POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(status time)
 POWERLEVEL9K_STATUS_VERBOSE=false #only show status if failed
 POWERLEVEL9K_PROMPT_ON_NEWLINE=true
@@ -79,6 +81,13 @@ bindkey "^I" expand-or-complete-with-dots
 # Automatically list directory contents on `cd`.
 auto-ls () { ls; }
 chpwd_functions=( auto-ls $chpwd_functions )
+
+# GRC colorizes nifty unix tools all over the place
+if (( $+commands[grc] )) && (( $+commands[brew] ))
+then
+  source `brew --prefix`/etc/grc.bashrc
+fi
+
 
 #fixes for autojump
 [[ -s $(brew --prefix)/etc/profile.d/autojump.sh ]] && . $(brew --prefix)/etc/profile.d/autojump.sh
