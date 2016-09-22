@@ -10,3 +10,12 @@
 	diff = auto
 	interactive = auto
 	status = auto
+[user]
+	name = mashehu
+	email = mashehu3@gmail.com
+[mergetool]
+	keepBackup = true
+[push]
+	default = simple
+[merge]
+	tool = opendiff
