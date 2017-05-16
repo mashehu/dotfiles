@@ -39,10 +39,12 @@ zplug "plugins/extract", from:oh-my-zsh
 zplug "zsh-users/zsh-completions", depth:1 #more completions
 zplug "zsh-users/zsh-autosuggestions", from:github #proposes transparent suggestions based on command history
 zplug "zsh-users/zsh-syntax-highlighting", from:github, defer:1
+
 zplug "zsh-users/zsh-history-substring-search", from:github, defer:3
 zplug "wbinglee/zsh-wakatime", from:github
 zplug "ascii-soup/zsh-url-highlighter", from:github
-HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_FOUND='bg=green,fg=black,bold' #define colors for found items
+zplug "zdharma/fast-syntax-highlighting", from:github
+
 if zplug check zsh-users/zsh-autosuggestions; then
     ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(history-substring-search-up history-substring-search-down)
     ZSH_AUTOSUGGEST_CLEAR_WIDGETS=("${(@)ZSH_AUTOSUGGEST_CLEAR_WIDGETS:#(up|down)-line-or-history}")
@@ -64,13 +66,16 @@ fi
 # BULLETTRAIN_VIRTUALENV_PREFIX=🏖
 # BULLETTRAIN_PROMPT_CHAR="❯"
 zplug "bhilburn/powerlevel9k", use:powerlevel9k.zsh-theme
+POWERLEVEL9K_MODE='nerdfont-complete'
 POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(context dir virtualenv vcs)
 POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(status time)
+POWERLEVEL9K_TIME_FORMAT="%D{ %H:%M:%S}"
 POWERLEVEL9K_STATUS_VERBOSE=false #only show status if failed
 POWERLEVEL9K_PROMPT_ON_NEWLINE=true
-
-
-
+POWERLEVEL9K_VCS_GIT_ICON=
+# POWERLEVEL9K_LEFT_SEGMENT_SEPARATOR=
+# POWERLEVEL9K_RIGHT_SEGMENT_SEPARATOR=
+HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_FOUND='bg=green,fg=black,bold' #define colors for found items
 
 export DEFAULT_USER="mitochondrium" #hide user in prompt if default user
 export HOMEBREW_CASK_OPTS="--appdir=/Applications" #give correct location to homebrew cask
