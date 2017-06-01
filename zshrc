@@ -44,6 +44,8 @@ zplug "zsh-users/zsh-history-substring-search", from:github, defer:3
 zplug "wbinglee/zsh-wakatime", from:github
 zplug "ascii-soup/zsh-url-highlighter", from:github
 zplug "zdharma/fast-syntax-highlighting", from:github
+zplug "zdharma/zui", from:github
+zplug "zdharma/zbrowse", from:github
 
 if zplug check zsh-users/zsh-autosuggestions; then
     ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(history-substring-search-up history-substring-search-down)
@@ -53,6 +55,7 @@ fi
 if zplug check zsh-users/zsh-history-substring-search; then
     bindkey '^[[A' history-substring-search-up
     bindkey '^[[B' history-substring-search-down
+    HISTORY_SUBSTRING_SEARCH_FUZZY=true
 fi
 
 #theme stuff
