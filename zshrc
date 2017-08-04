@@ -46,6 +46,7 @@ zplug "ascii-soup/zsh-url-highlighter", from:github
 zplug "zdharma/fast-syntax-highlighting", from:github
 zplug "zdharma/zui", from:github
 zplug "zdharma/zbrowse", from:github
+zplug "supercrabtree/k", from:github #better ls
 
 if zplug check zsh-users/zsh-autosuggestions; then
     ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(history-substring-search-up history-substring-search-down)
