@@ -22,6 +22,13 @@ LESSPIPE=`which src-hilite-lesspipe.sh`
 export LESSOPEN="| ${LESSPIPE} %s"
 export LESS=' -R -X -F '
 
+#npm settings
+# this is the root folder where all globally installed node packages will  go
+export NPM_PACKAGES="/usr/local/npm_packages"
+export NODE_PATH="$NPM_PACKAGES/lib/node_modules:$NODE_PATH"
+# add to PATH
+export PATH="$NPM_PACKAGES/bin:$PATH"
+
 # Bundles from the default repo (robbyrussell's oh-my-zsh).
 zplug "plugins/git", from:oh-my-zsh
 zplug "plugins/pip", from:oh-my-zsh
