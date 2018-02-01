@@ -17,10 +17,11 @@ source /usr/local/opt/zplug/init.zsh
 fpath=(/usr/local/share/zsh-completions $fpath)
 ttyctl -f #fixes error where the terminal confuses enter with return (prints ^M)
 export $EDITOR=atom
+export $BROWSER=google-chrome
 #less syntax-highlighting
-LESSPIPE=`which src-hilite-lesspipe.sh`
-export LESSOPEN="| ${LESSPIPE} %s"
-export LESS=' -R -X -F '
+export LESS="--quit-if-one-screen --ignore-case --status-column --LONG-PROMPT --RAW-CONTROL-CHARS --HILITE-UNREAD --tabs=4 --no-init --window=-4"
+export LESSOPEN="|/usr/local/bin/lesspipe.sh %s" LESS_ADVANCED_PREPROCESSOR=1
+export LESSCOLORIZER='pygmentize'
 
 #npm settings
 # this is the root folder where all globally installed node packages will  go
@@ -113,7 +114,7 @@ zle -N expand-or-complete-with-dots
 bindkey "^I" expand-or-complete-with-dots
 
 # Automatically list directory contents on `cd`.
-auto-ls () { ls -G; }
+auto-ls () { colorls -A --sd; }
 chpwd_functions=( auto-ls $chpwd_functions )
 
 # GRC colorizes nifty unix tools all over the place
@@ -127,7 +128,7 @@ fi
 [[ -s $(brew --prefix)/etc/profile.d/autojump.sh ]] && . $(brew --prefix)/etc/profile.d/autojump.sh
 
 #colorize ls output
-alias ls='ls -G'
+alias ls='colorls -A --sd'
 
 # Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
 export PATH="$PATH:$HOME/.rvm/bin"
