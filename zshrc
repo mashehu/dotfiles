@@ -18,6 +18,7 @@ fpath=(/usr/local/share/zsh-completions $fpath)
 ttyctl -f #fixes error where the terminal confuses enter with return (prints ^M)
 export $EDITOR=atom
 export $BROWSER=google-chrome
+export HOMEBREW_NO_AUTO_UPDATE=1
 #less syntax-highlighting
 export LESS="--quit-if-one-screen --ignore-case --status-column --LONG-PROMPT --RAW-CONTROL-CHARS --HILITE-UNREAD --tabs=4 --no-init --window=-4"
 export LESSOPEN="|/usr/local/bin/lesspipe.sh %s" LESS_ADVANCED_PREPROCESSOR=1
@@ -38,6 +39,7 @@ zplug "plugins/brew", from:oh-my-zsh
 zplug "plugins/brew-cask", from:oh-my-zsh
 zplug "plugins/common-aliases", from:oh-my-zsh
 zplug "plugins/npm", from:oh-my-zsh
+zplug "plugins/yarn", from:oh-my-zsh
 zplug "plugins/osx", from:oh-my-zsh
 zplug "plugins/web-search", from:oh-my-zsh
 zplug "plugins/colored-man-pages", from:oh-my-zsh
@@ -55,6 +57,7 @@ zplug "zdharma/fast-syntax-highlighting", from:github
 zplug "zdharma/zui", from:github
 zplug "zdharma/zbrowse", from:github
 zplug "supercrabtree/k", from:github #better ls
+zplug "akoenig/gulp", from:github
 
 if zplug check zsh-users/zsh-autosuggestions; then
     ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(history-substring-search-up history-substring-search-down)

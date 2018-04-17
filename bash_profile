@@ -11,3 +11,6 @@ export CLICOLOR=1
 
 
 [[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm" # Load RVM into a shell session *as a function*
+
+# added by Anaconda2 5.1.0 installer
+export PATH="/anaconda2/bin:$PATH"
