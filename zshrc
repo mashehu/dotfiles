@@ -31,6 +31,9 @@ export NODE_PATH="$NPM_PACKAGES/lib/node_modules:$NODE_PATH"
 # add to PATH
 export PATH="$NPM_PACKAGES/bin:$PATH"
 
+#mdv theme
+export MDV_THEME="734.0784, 20"
+
 # Bundles from the default repo (robbyrussell's oh-my-zsh).
 zplug "plugins/git", from:oh-my-zsh
 zplug "plugins/pip", from:oh-my-zsh
@@ -49,8 +52,8 @@ zplug "plugins/extract", from:oh-my-zsh
 zplug "zsh-users/zsh-completions", depth:1 #more completions
 zplug "zsh-users/zsh-autosuggestions", from:github #proposes transparent suggestions based on command history
 zplug "zsh-users/zsh-syntax-highlighting", from:github, defer:1
-
 zplug "zsh-users/zsh-history-substring-search", from:github, defer:3
+zplug "lukechilds/zsh-better-npm-completion", defer:2
 zplug "wbinglee/zsh-wakatime", from:github
 zplug "ascii-soup/zsh-url-highlighter", from:github
 zplug "zdharma/fast-syntax-highlighting", from:github
@@ -71,16 +74,6 @@ if zplug check zsh-users/zsh-history-substring-search; then
 fi
 
 #theme stuff
-
-# Load the theme.
-
-# antigen theme agnoster
-
-# antigen theme https://github.com/caiogondim/bullet-train-oh-my-zsh-theme bullet-train
-# BULLETTRAIN_GIT_SHOW=false
-# BULLETTRAIN_VIRTUALENV_PREFIX=🏖
-# BULLETTRAIN_PROMPT_CHAR="❯"
-zplug "bhilburn/powerlevel9k", use:powerlevel9k.zsh-theme
 POWERLEVEL9K_MODE='nerdfont-complete'
 POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(context dir virtualenv vcs)
 POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(status time)
@@ -91,6 +84,10 @@ POWERLEVEL9K_VCS_GIT_ICON=
 # POWERLEVEL9K_LEFT_SEGMENT_SEPARATOR=
 # POWERLEVEL9K_RIGHT_SEGMENT_SEPARATOR=
 HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_FOUND='bg=green,fg=black,bold' #define colors for found items
+
+POWERLEVEL9K_MULTILINE_SECOND_PROMPT_PREFIX="\u2570\uf460 "
+zplug "bhilburn/powerlevel9k", use:powerlevel9k.zsh-theme
+
 
 export DEFAULT_USER="mitochondrium" #hide user in prompt if default user
 export HOMEBREW_CASK_OPTS="--appdir=/Applications" #give correct location to homebrew cask
@@ -106,6 +103,8 @@ fi
 zplug load
 
 #aliases
+alias yad="yarn add --dev"
+alias -g latest='*(om[1])'
 
 #show dots for slow autocompletion
 expand-or-complete-with-dots() {

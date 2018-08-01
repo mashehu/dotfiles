@@ -14,3 +14,6 @@ export CLICOLOR=1
 
 # added by Anaconda2 5.1.0 installer
 export PATH="/anaconda2/bin:$PATH"
+
+# added by Miniconda2 installer
+export PATH="/Users/mitochondrium/miniconda2/bin:$PATH"

@@ -1,3 +1,9 @@
+[user]
+	name = mashehu
+	email = mashehu3@gmail.com
+[gitlab]
+	name = Matthias Hörtenhuber
+	email = matthias.hortenhuber@ki.se
 [filter "lfs"]
 	smudge = git-lfs smudge %f
 	required = true
@@ -5,14 +11,16 @@
 [alias]
 	lol = log --graph --decorate --pretty=oneline --abbrev-commit
 	lola = log --graph --decorate --pretty=oneline --abbrev-commit --all
+	lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
 [color]
 	branch = auto
 	diff = auto
 	interactive = auto
 	status = auto
-[user]
-	name = mashehu
-	email = mashehu3@gmail.com
+[color "status"]
+  changed = yellow
+  added = green
+  untracked = red
 [mergetool]
 	keepBackup = true
 [push]
