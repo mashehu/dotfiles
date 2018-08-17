@@ -1,6 +1,11 @@
 #!/usr/bin/zsh
 
-TERM="xterm-256color"
+# Set CLICOLOR if you want Ansi Colors in iTerm2
+export CLICOLOR=1
+
+# Set colors to match iTerm2 Terminal Colors
+export TERM=xterm-256color
+
 HISTFILE="${HOME}/.zshhistory"
 SAVEHIST=5000
 HISTSIZE=5000
@@ -33,6 +38,10 @@ export PATH="$NPM_PACKAGES/bin:$PATH"
 
 #mdv theme
 export MDV_THEME="734.0784, 20"
+
+#shpotify
+export CLIENT_ID="5942b98466664a6096dc69e1996033f2"
+export CLIENT_SECRET="9840abacd3ce4f45a9527aca7528be4d"
 
 # Bundles from the default repo (robbyrussell's oh-my-zsh).
 zplug "plugins/git", from:oh-my-zsh
@@ -71,6 +80,8 @@ if zplug check zsh-users/zsh-history-substring-search; then
     bindkey '^[[A' history-substring-search-up
     bindkey '^[[B' history-substring-search-down
     HISTORY_SUBSTRING_SEARCH_FUZZY=true
+    HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_FOUND='bg=green,fg=black,bold' #define colors for found items
+
 fi
 
 #theme stuff
@@ -83,7 +94,6 @@ POWERLEVEL9K_PROMPT_ON_NEWLINE=true
 POWERLEVEL9K_VCS_GIT_ICON=
 # POWERLEVEL9K_LEFT_SEGMENT_SEPARATOR=
 # POWERLEVEL9K_RIGHT_SEGMENT_SEPARATOR=
-HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_FOUND='bg=green,fg=black,bold' #define colors for found items
 
 POWERLEVEL9K_MULTILINE_SECOND_PROMPT_PREFIX="\u2570\uf460 "
 zplug "bhilburn/powerlevel9k", use:powerlevel9k.zsh-theme
@@ -105,6 +115,7 @@ zplug load
 #aliases
 alias yad="yarn add --dev"
 alias -g latest='*(om[1])'
+alias -g tree="tree -C"
 
 #show dots for slow autocompletion
 expand-or-complete-with-dots() {
