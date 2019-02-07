@@ -43,6 +43,12 @@ export MDV_THEME="734.0784, 20"
 export CLIENT_ID="5942b98466664a6096dc69e1996033f2"
 export CLIENT_SECRET="9840abacd3ce4f45a9527aca7528be4d"
 
+export FZF_BASE=/usr/local/opt/fzf
+export FZF_DEFAUL_OPTS='
+--color fg:252,bg:233,hl:67,fg+:252,bg+:235,hl+:81
+--color info:144,prompt:161,spinner:135,pointer:135,marker:118
+'
+
 # Bundles from the default repo (robbyrussell's oh-my-zsh).
 zplug "plugins/git", from:oh-my-zsh
 zplug "plugins/pip", from:oh-my-zsh
@@ -56,6 +62,8 @@ zplug "plugins/osx", from:oh-my-zsh
 zplug "plugins/web-search", from:oh-my-zsh
 zplug "plugins/colored-man-pages", from:oh-my-zsh
 zplug "plugins/extract", from:oh-my-zsh
+zplug "plugins/fzf", from:oh-my-zsh
+zplug "plugins/docker", from:oh-my-zsh
 
 # zplug djui/alias-tips
 zplug "zsh-users/zsh-completions", depth:1 #more completions
@@ -65,11 +73,12 @@ zplug "zsh-users/zsh-history-substring-search", from:github, defer:3
 zplug "lukechilds/zsh-better-npm-completion", defer:2
 zplug "wbinglee/zsh-wakatime", from:github
 zplug "ascii-soup/zsh-url-highlighter", from:github
-zplug "zdharma/fast-syntax-highlighting", from:github
+# zplug "zdharma/fast-syntax-highlighting", from:github, defer:2
 zplug "zdharma/zui", from:github
 zplug "zdharma/zbrowse", from:github
 zplug "supercrabtree/k", from:github #better ls
 zplug "akoenig/gulp", from:github
+
 
 if zplug check zsh-users/zsh-autosuggestions; then
     ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(history-substring-search-up history-substring-search-down)
@@ -111,11 +120,15 @@ fi
 
 # Then, source plugins and add commands to $PATH
 zplug load
-
+# source ~/.zplug/repos/changyuheng/zsh-interactive-cd/zsh-interactive-cd.plugin.zsh
 #aliases
 alias yad="yarn add --dev"
 alias -g latest='*(om[1])'
 alias -g tree="tree -C"
+
+function autotunnel(){
+  autossh -M 0 -o "ServerAliveInterval 30" -o "ServerAliveCountMax 120" -N -L localhost:8888:$1 matthi@rackham.uppmax.uu.se
+}
 
 #show dots for slow autocompletion
 expand-or-complete-with-dots() {
@@ -128,6 +141,7 @@ bindkey "^I" expand-or-complete-with-dots
 
 # Automatically list directory contents on `cd`.
 auto-ls () { colorls -A --sd; }
+# auto-ls () { ls --color=auto; }
 chpwd_functions=( auto-ls $chpwd_functions )
 
 # GRC colorizes nifty unix tools all over the place
@@ -142,6 +156,13 @@ fi
 
 #colorize ls output
 alias ls='colorls -A --sd'
+# alias ls='ls --color=auto'
+export PATH=/usr/local/miniconda3/bin:"$PATH"
+export PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH"
+export PATH="$HOME/.rbenv/bin:$PATH"
+eval "$(rbenv init -)"
 
-# Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
-export PATH="$PATH:$HOME/.rvm/bin"
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+# export PATH="/usr/local/opt/ruby/bin:$PATH"
+export PATH="/usr/local/opt/ruby/bin:$PATH"
+. /usr/local/miniconda3/etc/profile.d/conda.sh
