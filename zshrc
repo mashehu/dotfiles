@@ -105,8 +105,7 @@ POWERLEVEL9K_VCS_GIT_ICON=
 # POWERLEVEL9K_RIGHT_SEGMENT_SEPARATOR=
 
 POWERLEVEL9K_MULTILINE_SECOND_PROMPT_PREFIX="\u2570\uf460 "
-zplug "bhilburn/powerlevel9k", use:powerlevel9k.zsh-theme
-
+zplug "romkatv/powerlevel10k", use:powerlevel10k.zsh-theme
 
 export DEFAULT_USER="mitochondrium" #hide user in prompt if default user
 export HOMEBREW_CASK_OPTS="--appdir=/Applications" #give correct location to homebrew cask
@@ -127,7 +126,7 @@ alias -g latest='*(om[1])'
 alias -g tree="tree -C"
 
 function autotunnel(){
-  autossh -M 0 -o "ServerAliveInterval 30" -o "ServerAliveCountMax 120" -N -L localhost:8888:$1 matthi@rackham.uppmax.uu.se
+  autossh -M 0 -o "ServerAliveInterval 30" -o "ServerAliveCountMax 120" -N -L localhost:8888:$1:8888 matthi@rackham.uppmax.uu.se
 }
 
 #show dots for slow autocompletion
@@ -157,7 +156,7 @@ fi
 #colorize ls output
 alias ls='colorls -A --sd'
 # alias ls='ls --color=auto'
-export PATH=/usr/local/miniconda3/bin:"$PATH"
+# export PATH=/usr/local/miniconda3/bin:"$PATH"
 export PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH"
 export PATH="$HOME/.rbenv/bin:$PATH"
 eval "$(rbenv init -)"
