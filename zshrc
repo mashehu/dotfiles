@@ -49,6 +49,7 @@ export FZF_DEFAUL_OPTS='
 --color info:144,prompt:161,spinner:135,pointer:135,marker:118
 '
 
+zstyle ':completion:*' matcher-list '' 'm:{a-zA-Z}={A-Za-z}' #case insensitive fallback for tab-completion
 # Bundles from the default repo (robbyrussell's oh-my-zsh).
 zplug "plugins/git", from:oh-my-zsh
 zplug "plugins/pip", from:oh-my-zsh
@@ -139,7 +140,7 @@ zle -N expand-or-complete-with-dots
 bindkey "^I" expand-or-complete-with-dots
 
 # Automatically list directory contents on `cd`.
-auto-ls () { colorls -A --sd; }
+auto-ls () { lsd --group-dirs first; }
 # auto-ls () { ls --color=auto; }
 chpwd_functions=( auto-ls $chpwd_functions )
 
@@ -154,7 +155,7 @@ fi
 [[ -s $(brew --prefix)/etc/profile.d/autojump.sh ]] && . $(brew --prefix)/etc/profile.d/autojump.sh
 
 #colorize ls output
-alias ls='colorls -A --sd'
+alias ls='lsd --group-dirs first'
 # alias ls='ls --color=auto'
 # export PATH=/usr/local/miniconda3/bin:"$PATH"
 export PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH"
