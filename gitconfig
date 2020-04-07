@@ -1,14 +1,14 @@
 [user]
-	name = mashehu
-	email = mashehu3@gmail.com
+	name = matthiasho
+	email = matthias.hortenhuber@ki.se
 [gitlab]
 	name = Matthias Hörtenhuber
 	email = matthias.hortenhuber@ki.se
 [filter "lfs"]
-	process = git-lfs filter-process
-	required = true
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
 [alias]
 	lol = log --graph --decorate --pretty=oneline --abbrev-commit
 	lola = log --graph --decorate --pretty=oneline --abbrev-commit --all
@@ -28,3 +28,5 @@
 	default = simple
 [merge]
 	tool = opendiff
+[credential]
+	helper = osxkeychain
