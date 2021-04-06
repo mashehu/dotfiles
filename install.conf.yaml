@@ -4,9 +4,11 @@
     ~/.bash_profile: bash_profile
     ~/.gitconfig: gitconfig
     ~/.zshrc: zshrc
+    ~/.config/lf/lfrc: lfrc
 
 - shell:
-  - /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+  - if ! command -v brew >/dev/null 2>&1; then /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" fi
   - brew update
   - brew tap homebrew/bundle && brew bundle --file=Brewfile
+  - $(brew --prefix)/opt/fzf/install
   - git submodule update --init --recursive

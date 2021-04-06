@@ -55,7 +55,7 @@ zstyle ':completion:*' matcher-list '' 'm:{a-zA-Z}={A-Za-z}' #case insensitive f
 # Bundles from the default repo (robbyrussell's oh-my-zsh).
 zplug "plugins/git", from:oh-my-zsh
 zplug "plugins/pip", from:oh-my-zsh
-zplug "plugins/autojump", from:oh-my-zsh #needs to be installed via homebrew
+# zplug "plugins/autojump", from:oh-my-zsh #needs to be installed via homebrew
 zplug "plugins/brew", from:oh-my-zsh
 zplug "plugins/brew-cask", from:oh-my-zsh
 zplug "plugins/common-aliases", from:oh-my-zsh
@@ -67,6 +67,7 @@ zplug "plugins/colored-man-pages", from:oh-my-zsh
 zplug "plugins/extract", from:oh-my-zsh
 zplug "plugins/fzf", from:oh-my-zsh
 zplug "plugins/docker", from:oh-my-zsh
+zplug "plugins/fasd", from:oh-my-zsh
 
 
 # zplug djui/alias-tips
@@ -75,16 +76,16 @@ zplug "zsh-users/zsh-autosuggestions", from:github #proposes transparent suggest
 zplug "zsh-users/zsh-syntax-highlighting", from:github, defer:1
 zplug "zsh-users/zsh-history-substring-search", from:github, defer:3
 zplug "lukechilds/zsh-better-npm-completion", defer:2
-zplug "wbinglee/zsh-wakatime", from:github
+zplug "sobolevn/wakatime-zsh-plugin", from:github
 zplug "ascii-soup/zsh-url-highlighter", from:github
 # zplug "zdharma/zui", from:github
 # zplug "zdharma/zbrowse", from:github
 zplug "supercrabtree/k", from:github #better ls
 zplug "akoenig/gulp", from:github
 zplug "Tarrasch/zsh-bd", from:github
-# zplug "wookayin/fzf-fasd", from:github
+zplug "wookayin/fzf-fasd", from:github
 zplug "changyuheng/fz", defer:1
-zplug "Aloxaf/fzf-tab", from:github
+zplug "Aloxaf/fzf-tab", from:github, defer:1
 zplug "plugins/z", from:oh-my-zsh
 
 if zplug check zsh-users/zsh-autosuggestions; then
@@ -101,6 +102,13 @@ if zplug check zsh-users/zsh-history-substring-search; then
     HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_FOUND='bg=green,fg=black,bold' #define colors for found items
 
 fi
+
+#fzf-tab config
+zstyle ":completion:*:git-checkout:*" sort false
+zstyle ':completion:*:descriptions' format '[%d]'
+zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+zstyle ':fzf-tab:complete:cd:*' fzf-preview 'exa -1 --color=always $realpath'
+enable-fzf-tab
 
 #theme stuff
 POWERLEVEL9K_MODE='nerdfont-complete'
@@ -123,7 +131,7 @@ if command -v brew >/dev/null 2>&1; then
 	# Load rupa's z if installed
 	[ -f $(brew --prefix)/etc/profile.d/z.sh ] && source $(brew --prefix)/etc/profile.d/z.sh
 fi
-export DEFAULT_USER="mitochondrium" #hide user in prompt if default user
+export DEFAULT_USER="matthias" #hide user in prompt if default user
 export HOMEBREW_CASK_OPTS="--appdir=/Applications" #give correct location to homebrew cask
 # Install plugins if there are plugins that have not been installed
 if ! zplug check --verbose; then
@@ -140,7 +148,6 @@ zplug load
 alias yad="yarn add --dev"
 alias -g latest='*(om[1])'
 alias -g tree="tree -C"
-
 
 function autotunnel(){
   autossh -M 0 -o "ServerAliveInterval 30" -o "ServerAliveCountMax 120" -N -L localhost:8888:$1:8888 matthi@rackham.uppmax.uu.se
@@ -165,7 +172,7 @@ function lsdd() {
     fi
 }
 # Automatically list directory contents on `cd`.
-auto-ls () { lsdd }
+auto-ls () { lsdd -tr}
 # auto-ls () { ls --color=auto; }
 chpwd_functions=( auto-ls $chpwd_functions )
 
@@ -176,25 +183,32 @@ then
 fi
 
 
-#fixes for autojump
-[[ -s $(brew --prefix)/etc/profile.d/autojump.sh ]] && . $(brew --prefix)/etc/profile.d/autojump.sh
+# #fixes for autojump
+# [[ -s $(brew --prefix)/etc/profile.d/autojump.sh ]] && . $(brew --prefix)/etc/profile.d/autojump.sh
 
 
 #colorize ls output
 alias ls='lsdd'
 # alias ls='ls --color=auto'
+
 export PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH"
 export PATH="$HOME/.rbenv/bin:$PATH"
 eval "$(rbenv init -)"
 
-#autojump + fzf
-j() {
-    if [[ "$#" -ne 0 ]]; then
-        cd $(autojump $@)
-        return
-    fi
-    cd "$(autojump -s | sort -k1gr | awk '$1 ~ /[0-9]:/ && $2 ~ /^\// { for (i=2; i<=NF; i++) { print $(i) } }' |  fzf --height 40% --reverse --inline-info)"
-}
+# fasd init
+if which fasd >/dev/null; then
+    # install fasd hooks and basic aliases in the shell
+    eval "$(fasd --init auto)"
+fi
+#
+# #autojump + fzf
+# j() {
+#     if [[ "$#" -ne 0 ]]; then
+#         cd $(autojump $@)
+#         return
+#     fi
+#     cd "$(autojump -s | sort -k1gr | awk '$1 ~ /[0-9]:/ && $2 ~ /^\// { for (i=2; i<=NF; i++) { print $(i) } }' |  fzf --height 40% --reverse --inline-info)"
+# }
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 # export PATH="/usr/local/opt/ruby/bin:$PATH"
@@ -218,3 +232,22 @@ else
 fi
 unset __conda_setup
 # <<< conda initialize <<<
+
+
+# lf - file manager
+
+lfcd () {
+    tmp="$(mktemp)"
+    lf -last-dir-path="$tmp" "$@"
+    if [ -f "$tmp" ]; then
+        dir="$(cat "$tmp")"
+        rm -f "$tmp"
+        if [ -d "$dir" ]; then
+            if [ "$dir" != "$(pwd)" ]; then
+                cd "$dir"
+            fi
+        fi
+    fi
+}
+
+[ -f "~/.config/lf/lfrc" ] && source "~/.config/lf/lfrc"
