@@ -47,11 +47,16 @@ export CLIENT_SECRET="9840abacd3ce4f45a9527aca7528be4d"
 
 export FZF_BASE=/usr/local/opt/fzf
 export FZF_DEFAUL_OPTS='
---color fg:252,bg:233,hl:67,fg+:252,bg+:235,hl+:81
---color info:144,prompt:161,spinner:135,pointer:135,marker:118
+--color fg:-1,bg:-1,hl:230,fg+:3,bg+:233,hl+:229
+--color info:150,prompt:110,spinner:150,pointer:167,marker:174
 '
 
+# using fd with fzf
+export FZF_DEFAULT_COMMAND="fd --type file --color=always"
+export FZF_DEFAULT_OPTS="--ansi"
+
 zstyle ':completion:*' matcher-list '' 'm:{a-zA-Z}={A-Za-z}' #case insensitive fallback for tab-completion
+
 # Bundles from the default repo (robbyrussell's oh-my-zsh).
 zplug "plugins/git", from:oh-my-zsh
 zplug "plugins/pip", from:oh-my-zsh
@@ -68,14 +73,15 @@ zplug "plugins/extract", from:oh-my-zsh
 zplug "plugins/fzf", from:oh-my-zsh
 zplug "plugins/docker", from:oh-my-zsh
 zplug "plugins/fasd", from:oh-my-zsh
+zplug "plugins/bgnotify", from:oh-my-zsh
 
 
 # zplug djui/alias-tips
 zplug "zsh-users/zsh-completions", depth:1 #more completions
 zplug "zsh-users/zsh-autosuggestions", from:github #proposes transparent suggestions based on command history
-zplug "zsh-users/zsh-syntax-highlighting", from:github, defer:1
+zplug "zsh-users/zsh-syntax-highlighting", from:github, defer:2
 zplug "zsh-users/zsh-history-substring-search", from:github, defer:3
-zplug "lukechilds/zsh-better-npm-completion", defer:2
+zplug "hlissner/zsh-autopair", from:github, defer:2
 zplug "sobolevn/wakatime-zsh-plugin", from:github
 zplug "ascii-soup/zsh-url-highlighter", from:github
 # zplug "zdharma/zui", from:github
@@ -84,8 +90,8 @@ zplug "supercrabtree/k", from:github #better ls
 zplug "akoenig/gulp", from:github
 zplug "Tarrasch/zsh-bd", from:github
 zplug "wookayin/fzf-fasd", from:github
-zplug "changyuheng/fz", defer:1
-zplug "Aloxaf/fzf-tab", from:github, defer:1
+# zplug "changyuheng/fz", defer:1
+zplug "Aloxaf/fzf-tab", from:github
 zplug "plugins/z", from:oh-my-zsh
 
 if zplug check zsh-users/zsh-autosuggestions; then
@@ -102,13 +108,6 @@ if zplug check zsh-users/zsh-history-substring-search; then
     HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_FOUND='bg=green,fg=black,bold' #define colors for found items
 
 fi
-
-#fzf-tab config
-zstyle ":completion:*:git-checkout:*" sort false
-zstyle ':completion:*:descriptions' format '[%d]'
-zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
-zstyle ':fzf-tab:complete:cd:*' fzf-preview 'exa -1 --color=always $realpath'
-enable-fzf-tab
 
 #theme stuff
 POWERLEVEL9K_MODE='nerdfont-complete'
@@ -143,11 +142,13 @@ fi
 
 # Then, source plugins and add commands to $PATH
 zplug load
+
 # source ~/.zplug/repos/changyuheng/zsh-interactive-cd/zsh-interactive-cd.plugin.zsh
 #aliases
 alias yad="yarn add --dev"
 alias -g latest='*(om[1])'
 alias -g tree="tree -C"
+alias cat="bat --theme=\$(defaults read -globalDomain AppleInterfaceStyle &> /dev/null && echo default || echo GitHub)"
 
 function autotunnel(){
   autossh -M 0 -o "ServerAliveInterval 30" -o "ServerAliveCountMax 120" -N -L localhost:8888:$1:8888 matthi@rackham.uppmax.uu.se
@@ -176,6 +177,8 @@ auto-ls () { lsdd -tr}
 # auto-ls () { ls --color=auto; }
 chpwd_functions=( auto-ls $chpwd_functions )
 
+bgnotify_threshold=60  ## set your own notification threshold
+
 # GRC colorizes nifty unix tools all over the place
 if (( $+commands[grc] )) && (( $+commands[brew] ))
 then
@@ -190,6 +193,24 @@ fi
 #colorize ls output
 alias ls='lsdd'
 # alias ls='ls --color=auto'
+
+#fzf-tab config
+zstyle ":completion:*:git-checkout:*" sort false
+zstyle ':completion:*:descriptions' format '[%d]'
+zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+zstyle ':fzf-tab:*' switch-group ',' '.'
+
+# zstyle ':fzf-tab:*' fzf-bindings 'space:accept,backward-eof:abort'   # Space as accept, abort when deleting empty space
+zstyle ':fzf-tab:*' print-query ctrl-c        # Use input as result when ctrl-c
+# zstyle ':fzf-tab:*' accept-line enter         # Accept selected entry on enter
+zstyle ':fzf-tab:*' fzf-pad 4
+zstyle ':fzf-tab:*' prefix ''                 # No dot prefix
+zstyle ':fzf-tab:*' single-group color header # Show header for single groups
+zstyle ':fzf-tab:complete:(cd|ls|lsd|lsdd|j):*' fzf-preview '[[ -d $realpath ]] && exa --icons -1 --color=always -- $realpath'
+zstyle ':fzf-tab:complete:((micro|cp|rm|bat|less|code|nano|atom):argument-rest|kate:*)' fzf-preview 'bat --color=always -- $realpath 2>/dev/null || ls --color=always -- $realpath'
+zstyle ':fzf-tab:complete:updatelocal:argument-rest' fzf-preview "git --git-dir=$UPDATELOCAL_GITDIR/\${word}/.git log --color --date=short --pretty=format:'%Cgreen%cd %h %Creset%s %Cred%d%Creset ||%b' ..FETCH_HEAD 2>/dev/null"
+zstyle ':fzf-tab:complete:updatelocal:argument-rest' fzf-flags --preview-window=down:5:wrap
+
 
 export PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH"
 export PATH="$HOME/.rbenv/bin:$PATH"
@@ -210,10 +231,11 @@ fi
 #     cd "$(autojump -s | sort -k1gr | awk '$1 ~ /[0-9]:/ && $2 ~ /^\// { for (i=2; i<=NF; i++) { print $(i) } }' |  fzf --height 40% --reverse --inline-info)"
 # }
 
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-# export PATH="/usr/local/opt/ruby/bin:$PATH"
-export PATH="/usr/local/opt/ruby/bin:$PATH"
 
+# fzf stuff
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+export PATH="/usr/local/opt/ruby/bin:$PATH"
 export PATH="/usr/local/sbin:$PATH"
 export PATH="/usr/local/opt/openssl@1.1/bin:$PATH"
 export RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@1.1)"
