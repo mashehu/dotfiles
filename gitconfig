@@ -19,9 +19,9 @@
 	interactive = auto
 	status = auto
 [color "status"]
-  changed = yellow
-  added = green
-  untracked = red
+	changed = yellow
+	added = green
+	untracked = red
 [mergetool]
 	keepBackup = true
 [push]
@@ -32,3 +32,13 @@
 	helper = osxkeychain
 [pull]
 	rebase = false
+[pager]
+    diff = delta
+    log = delta
+    reflog = delta
+    show = delta
+[delta]
+    plus-style = "syntax #012800"
+    minus-style = "syntax #340001"
+    syntax-theme = Monokai Extended
+	side-by-side = true

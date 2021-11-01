@@ -58,6 +58,7 @@ export FZF_DEFAULT_OPTS="--ansi"
 zstyle ':completion:*' matcher-list '' 'm:{a-zA-Z}={A-Za-z}' #case insensitive fallback for tab-completion
 
 # Bundles from the default repo (robbyrussell's oh-my-zsh).
+zplug 'zplug/zplug', hook-build:'zplug --self-manage'
 zplug "plugins/git", from:oh-my-zsh
 zplug "plugins/pip", from:oh-my-zsh
 # zplug "plugins/autojump", from:oh-my-zsh #needs to be installed via homebrew
