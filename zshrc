@@ -20,10 +20,10 @@ setopt inc_append_history
 setopt share_history
 setopt autocd
 #load zplug
-source /usr/local/opt/zplug/init.zsh
-fpath=(/usr/local/share/zsh-completions $fpath)
+source /opt/homebrew/opt/zplug/init.zsh
+
 ttyctl -f #fixes error where the terminal confuses enter with return (prints ^M)
-# export $EDITOR=atom
+export EDITOR=/opt/homebrew/bin/code
 # export $BROWSER=google-chrome
 export HOMEBREW_NO_AUTO_UPDATE=1
 export PATH=/usr/local/bin:$PATH
@@ -31,6 +31,9 @@ export PATH=/usr/local/bin:$PATH
 export LESS="--quit-if-one-screen --ignore-case --status-column --LONG-PROMPT --RAW-CONTROL-CHARS --HILITE-UNREAD --tabs=4 --no-init --window=-4"
 export LESSOPEN="|/usr/local/bin/lesspipe.sh %s" LESS_ADVANCED_PREPROCESSOR=1
 export LESSCOLORIZER='pygmentize'
+
+export ZSH_WAKATIME_BIN=/opt/homebrew/bin/wakatime
+
 #npm settings
 # this is the root folder where all globally installed node packages will  go
 export NPM_PACKAGES="/usr/local/npm_packages"
@@ -67,7 +70,7 @@ zplug "plugins/brew-cask", from:oh-my-zsh
 zplug "plugins/common-aliases", from:oh-my-zsh
 zplug "plugins/npm", from:oh-my-zsh
 zplug "plugins/yarn", from:oh-my-zsh
-zplug "plugins/osx", from:oh-my-zsh
+zplug "plugins/macos", from:oh-my-zsh
 zplug "plugins/web-search", from:oh-my-zsh
 zplug "plugins/colored-man-pages", from:oh-my-zsh
 zplug "plugins/extract", from:oh-my-zsh
@@ -93,7 +96,7 @@ zplug "Tarrasch/zsh-bd", from:github
 zplug "wookayin/fzf-fasd", from:github
 # zplug "changyuheng/fz", defer:1
 zplug "Aloxaf/fzf-tab", from:github
-zplug "plugins/z", from:oh-my-zsh
+# zplug "plugins/z", from:oh-my-zsh
 
 if zplug check zsh-users/zsh-autosuggestions; then
     ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(history-substring-search-up history-substring-search-down)
@@ -131,7 +134,7 @@ if command -v brew >/dev/null 2>&1; then
 	# Load rupa's z if installed
 	[ -f $(brew --prefix)/etc/profile.d/z.sh ] && source $(brew --prefix)/etc/profile.d/z.sh
 fi
-export DEFAULT_USER="matthias" #hide user in prompt if default user
+export DEFAULT_USER="mitochondrium" #hide user in prompt if default user
 export HOMEBREW_CASK_OPTS="--appdir=/Applications" #give correct location to homebrew cask
 # Install plugins if there are plugins that have not been installed
 if ! zplug check --verbose; then
@@ -181,10 +184,10 @@ chpwd_functions=( auto-ls $chpwd_functions )
 bgnotify_threshold=60  ## set your own notification threshold
 
 # GRC colorizes nifty unix tools all over the place
-if (( $+commands[grc] )) && (( $+commands[brew] ))
-then
-  source `brew --prefix`/etc/grc.bashrc
-fi
+# if (( $+commands[grc] )) && (( $+commands[brew] ))
+# then
+#   source `brew --prefix`/etc/grc.bashrc
+# fi
 
 
 # #fixes for autojump
@@ -201,14 +204,14 @@ zstyle ':completion:*:descriptions' format '[%d]'
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 zstyle ':fzf-tab:*' switch-group ',' '.'
 
-# zstyle ':fzf-tab:*' fzf-bindings 'space:accept,backward-eof:abort'   # Space as accept, abort when deleting empty space
+zstyle ':fzf-tab:*' fzf-bindings 'space:accept,backward-eof:abort'   # Space as accept, abort when deleting empty space
 zstyle ':fzf-tab:*' print-query ctrl-c        # Use input as result when ctrl-c
-# zstyle ':fzf-tab:*' accept-line enter         # Accept selected entry on enter
+zstyle ':fzf-tab:*' accept-line enter         # Accept selected entry on enter
 zstyle ':fzf-tab:*' fzf-pad 4
 zstyle ':fzf-tab:*' prefix ''                 # No dot prefix
 zstyle ':fzf-tab:*' single-group color header # Show header for single groups
 zstyle ':fzf-tab:complete:(cd|ls|lsd|lsdd|j):*' fzf-preview '[[ -d $realpath ]] && exa --icons -1 --color=always -- $realpath'
-zstyle ':fzf-tab:complete:((micro|cp|rm|bat|less|code|nano|atom):argument-rest|kate:*)' fzf-preview 'bat --color=always -- $realpath 2>/dev/null || ls --color=always -- $realpath'
+zstyle ':fzf-tab:complete:((micro|cp|mv|rm|bat|less|code|nano|atom):argument-rest|kate:*)' fzf-preview 'bat --color=always -- $realpath 2>/dev/null || ls --color=always -- $realpath'
 zstyle ':fzf-tab:complete:updatelocal:argument-rest' fzf-preview "git --git-dir=$UPDATELOCAL_GITDIR/\${word}/.git log --color --date=short --pretty=format:'%Cgreen%cd %h %Creset%s %Cred%d%Creset ||%b' ..FETCH_HEAD 2>/dev/null"
 zstyle ':fzf-tab:complete:updatelocal:argument-rest' fzf-flags --preview-window=down:5:wrap
 
@@ -243,14 +246,14 @@ export RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@1.1)"
 
 # >>> conda initialize >>>
 # !! Contents within this block are managed by 'conda init' !!
-__conda_setup="$('/usr/local/Caskroom/miniconda/base/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
+__conda_setup="$('/opt/homebrew/Caskroom/miniconda/base/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
 if [ $? -eq 0 ]; then
     eval "$__conda_setup"
 else
-    if [ -f "/usr/local/Caskroom/miniconda/base/etc/profile.d/conda.sh" ]; then
-        . "/usr/local/Caskroom/miniconda/base/etc/profile.d/conda.sh"
+    if [ -f "/opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh" ]; then
+        . "/opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh"
     else
-        export PATH="/usr/local/Caskroom/miniconda/base/bin:$PATH"
+        export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:$PATH"
     fi
 fi
 unset __conda_setup
@@ -274,3 +277,20 @@ lfcd () {
 }
 
 [ -f "~/.config/lf/lfrc" ] && source "~/.config/lf/lfrc"
+export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
+alias R="/opt/homebrew/opt/r/bin/R --vanilla"
+export PATH="/opt/homebrew/opt/openjdk/bin:$PATH"
+## iterm2 shell integration 
+source ~/.iterm2_shell_integration.zsh
+
+# emulate docker non-arm docker images
+docker() {
+    if [[ `uname -m` == "arm64" ]] && [[ "$1" == "run" || "$1" == "build" ]]; then
+        /usr/local/bin/docker "$1" --platform linux/amd64 "${@:2}"
+    else
+        /usr/local/bin/docker "$@"
+    fi
+}
+
+export PATH="/opt/homebrew/opt/erlang@22/bin:$PATH"
+PATH=/opt/homebrew/opt/openjdk/bin:/opt/homebrew/opt/llvm/bin:/opt/homebrew/Caskroom/miniconda/base/bin:/opt/homebrew/Caskroom/miniconda/base/condabin:/usr/local/opt/openssl@1.1/bin:/usr/local/sbin:/usr/local/opt/ruby/bin:/Users/mitochondrium/.rbenv/shims:/Users/mitochondrium/.rbenv/bin:/usr/local/opt/coreutils/libexec/gnubin:/usr/local/npm_packages/bin:/usr/local/bin:/opt/homebrew/Cellar/zplug/2.4.2/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/X11/bin:/opt/homebrew/opt/fzf/bin:/Users/mitochondrium/homer/.//bin/
