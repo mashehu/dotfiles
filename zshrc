@@ -1,5 +1,135 @@
 #!/usr/bin/zsh
 
+# Start configuration added by Zim install {{{
+#
+# User configuration sourced by interactive shells
+#
+
+# -----------------
+# Zsh configuration
+# -----------------
+
+#
+# History
+#
+
+# Remove older command from the history if a duplicate is to be added.
+setopt HIST_IGNORE_ALL_DUPS
+
+#
+# Input/output
+#
+
+# Set editor default keymap to emacs (`-e`) or vi (`-v`)
+bindkey -e
+
+# Prompt for spelling correction of commands.
+setopt CORRECT
+
+# Customize spelling correction prompt.
+SPROMPT='zsh: correct %F{red}%R%f to %F{green}%r%f [nyae]? '
+
+# Remove path separator from WORDCHARS.
+WORDCHARS=${WORDCHARS//[\/]}
+
+# -----------------
+# Zim configuration
+# -----------------
+
+# Use degit instead of git as the default tool to install and update modules.
+#zstyle ':zim:zmodule' use 'degit'
+
+# --------------------
+# Module configuration
+# --------------------
+
+#
+# git
+#
+
+# Set a custom prefix for the generated aliases. The default prefix is 'G'.
+#zstyle ':zim:git' aliases-prefix 'g'
+
+#
+# input
+#
+
+# Append `../` to your input for each `.` you type after an initial `..`
+zstyle ':zim:input' double-dot-expand yes
+
+#
+# termtitle
+#
+
+# Set a custom terminal title format using prompt expansion escape sequences.
+# See http://zsh.sourceforge.net/Doc/Release/Prompt-Expansion.html#Simple-Prompt-Escapes
+# If none is provided, the default '%n@%m: %~' is used.
+#zstyle ':zim:termtitle' format '%1~'
+
+#
+# zsh-autosuggestions
+#
+
+# Disable automatic widget re-binding on each precmd. This can be set when
+# zsh-users/zsh-autosuggestions is the last module in your ~/.zimrc.
+ZSH_AUTOSUGGEST_MANUAL_REBIND=1
+
+# Customize the style that the suggestions are shown with.
+# See https://github.com/zsh-users/zsh-autosuggestions/blob/master/README.md#suggestion-highlight-style
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=242'
+
+#
+# zsh-syntax-highlighting
+#
+
+# Set what highlighters will be used.
+# See https://github.com/zsh-users/zsh-syntax-highlighting/blob/master/docs/highlighters.md
+ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets)
+
+# Customize the main highlighter styles.
+# See https://github.com/zsh-users/zsh-syntax-highlighting/blob/master/docs/highlighters/main.md#how-to-tweak-it
+#typeset -A ZSH_HIGHLIGHT_STYLES
+#ZSH_HIGHLIGHT_STYLES[comment]='fg=242'
+
+# ------------------
+# Initialize modules
+# ------------------
+
+ZIM_HOME=${ZDOTDIR:-${HOME}}/.zim
+# Download zimfw plugin manager if missing.
+if [[ ! -e ${ZIM_HOME}/zimfw.zsh ]]; then
+    if (( ${+commands[curl]} )); then
+        curl -fsSL --create-dirs -o ${ZIM_HOME}/zimfw.zsh \
+            https://github.com/zimfw/zimfw/releases/latest/download/zimfw.zsh
+    else
+        mkdir -p ${ZIM_HOME} && wget -nv -O ${ZIM_HOME}/zimfw.zsh \
+            https://github.com/zimfw/zimfw/releases/latest/download/zimfw.zsh
+    fi
+fi
+# Install missing modules, and update ${ZIM_HOME}/init.zsh if missing or outdated.
+if [[ ! ${ZIM_HOME}/init.zsh -nt ${ZDOTDIR:-${HOME}}/.zimrc ]]; then
+    source ${ZIM_HOME}/zimfw.zsh init -q
+fi
+# Initialize modules.
+source ${ZIM_HOME}/init.zsh
+
+# ------------------------------
+# Post-init module configuration
+# ------------------------------
+
+#
+# zsh-history-substring-search
+#
+
+zmodload -F zsh/terminfo +p:terminfo
+# Bind ^[[A/^[[B manually so up/down works both before and after zle-line-init
+for key ('^[[A' '^P' ${terminfo[kcuu1]}) bindkey ${key} history-substring-search-up
+for key ('^[[B' '^N' ${terminfo[kcud1]}) bindkey ${key} history-substring-search-down
+for key ('k') bindkey -M vicmd ${key} history-substring-search-up
+for key ('j') bindkey -M vicmd ${key} history-substring-search-down
+unset key
+# }}} End configuration added by Zim install
+
 # Set CLICOLOR if you want Ansi Colors in iTerm2
 export CLICOLOR=1
 
@@ -19,8 +149,6 @@ setopt hist_verify
 setopt inc_append_history
 setopt share_history
 setopt autocd
-#load zplug
-source /opt/homebrew/opt/zplug/init.zsh
 
 ttyctl -f #fixes error where the terminal confuses enter with return (prints ^M)
 export EDITOR=/opt/homebrew/bin/code
@@ -44,74 +172,13 @@ export PATH="$NPM_PACKAGES/bin:$PATH"
 #mdv theme
 export MDV_THEME="734.0784, 20"
 
-#shpotify
-export CLIENT_ID="5942b98466664a6096dc69e1996033f2"
-export CLIENT_SECRET="9840abacd3ce4f45a9527aca7528be4d"
-
-export FZF_BASE=/usr/local/opt/fzf
-export FZF_DEFAUL_OPTS='
---color fg:-1,bg:-1,hl:230,fg+:3,bg+:233,hl+:229
---color info:150,prompt:110,spinner:150,pointer:167,marker:174
-'
-
 # using fd with fzf
 export FZF_DEFAULT_COMMAND="fd --type file --color=always"
 export FZF_DEFAULT_OPTS="--ansi"
 
-zstyle ':completion:*' matcher-list '' 'm:{a-zA-Z}={A-Za-z}' #case insensitive fallback for tab-completion
-
-# Bundles from the default repo (robbyrussell's oh-my-zsh).
-zplug 'zplug/zplug', hook-build:'zplug --self-manage'
-zplug "plugins/git", from:oh-my-zsh
-zplug "plugins/pip", from:oh-my-zsh
-# zplug "plugins/autojump", from:oh-my-zsh #needs to be installed via homebrew
-zplug "plugins/brew", from:oh-my-zsh
-zplug "plugins/brew-cask", from:oh-my-zsh
-zplug "plugins/common-aliases", from:oh-my-zsh
-zplug "plugins/npm", from:oh-my-zsh
-zplug "plugins/yarn", from:oh-my-zsh
-zplug "plugins/macos", from:oh-my-zsh
-zplug "plugins/web-search", from:oh-my-zsh
-zplug "plugins/colored-man-pages", from:oh-my-zsh
-zplug "plugins/extract", from:oh-my-zsh
-zplug "plugins/fzf", from:oh-my-zsh
-zplug "plugins/docker", from:oh-my-zsh
-zplug "plugins/fasd", from:oh-my-zsh
-zplug "plugins/bgnotify", from:oh-my-zsh
-
-
-# zplug djui/alias-tips
-zplug "zsh-users/zsh-completions", depth:1 #more completions
-zplug "zsh-users/zsh-autosuggestions", from:github #proposes transparent suggestions based on command history
-zplug "zsh-users/zsh-syntax-highlighting", from:github, defer:2
-zplug "zsh-users/zsh-history-substring-search", from:github, defer:3
-zplug "hlissner/zsh-autopair", from:github, defer:2
-zplug "sobolevn/wakatime-zsh-plugin", from:github
-zplug "ascii-soup/zsh-url-highlighter", from:github
-# zplug "zdharma/zui", from:github
-# zplug "zdharma/zbrowse", from:github
-zplug "supercrabtree/k", from:github #better ls
-zplug "akoenig/gulp", from:github
-zplug "Tarrasch/zsh-bd", from:github
-zplug "wookayin/fzf-fasd", from:github
-# zplug "changyuheng/fz", defer:1
-zplug "Aloxaf/fzf-tab", from:github
-# zplug "plugins/z", from:oh-my-zsh
-
-if zplug check zsh-users/zsh-autosuggestions; then
-    ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(history-substring-search-up history-substring-search-down)
-    ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=("${(@)ZSH_AUTOSUGGEST_CLEAR_WIDGETS:#(up|down)-line-or-history}")
-    ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(bracketed-paste accept-line)
-    ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#8b8b8b"
-fi
-
-if zplug check zsh-users/zsh-history-substring-search; then
-    bindkey '^[[A' history-substring-search-up
-    bindkey '^[[B' history-substring-search-down
-    HISTORY_SUBSTRING_SEARCH_FUZZY=true
-    HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_FOUND='bg=green,fg=black,bold' #define colors for found items
-
-fi
+# zsh-history-substring-search settings
+HISTORY_SUBSTRING_SEARCH_FUZZY=true
+HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_FOUND='bg=green,fg=black,bold' #define colors for found items
 
 #theme stuff
 POWERLEVEL9K_MODE='nerdfont-complete'
@@ -123,31 +190,10 @@ POWERLEVEL9K_PROMPT_ON_NEWLINE=true
 POWERLEVEL9K_VCS_GIT_ICON=
 
 POWERLEVEL9K_MULTILINE_SECOND_PROMPT_PREFIX="\u2570\uf460 "
-zplug "romkatv/powerlevel10k", use:powerlevel10k.zsh-theme
 
-# powerlevel10k insta-prompt
-# if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-#   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-# fi
-#
-if command -v brew >/dev/null 2>&1; then
-	# Load rupa's z if installed
-	[ -f $(brew --prefix)/etc/profile.d/z.sh ] && source $(brew --prefix)/etc/profile.d/z.sh
-fi
 export DEFAULT_USER="mitochondrium" #hide user in prompt if default user
 export HOMEBREW_CASK_OPTS="--appdir=/Applications" #give correct location to homebrew cask
-# Install plugins if there are plugins that have not been installed
-if ! zplug check --verbose; then
-    printf "Install? [y/N]: "
-    if read -q; then
-        echo; zplug install
-    fi
-fi
 
-# Then, source plugins and add commands to $PATH
-zplug load
-
-# source ~/.zplug/repos/changyuheng/zsh-interactive-cd/zsh-interactive-cd.plugin.zsh
 #aliases
 alias yad="yarn add --dev"
 alias -g latest='*(om[1])'
@@ -155,19 +201,29 @@ alias -g tree="tree -C"
 alias cat="bat --theme=\$(defaults read -globalDomain AppleInterfaceStyle &> /dev/null && echo default || echo GitHub)"
 
 function autotunnel(){
-  autossh -M 0 -o "ServerAliveInterval 30" -o "ServerAliveCountMax 120" -N -L localhost:8888:$1:8888 matthi@rackham.uppmax.uu.se
+    autossh -M 0 -o "ServerAliveInterval 30" -o "ServerAliveCountMax 120" -N -L localhost:8888:$1:8888 matthi@rackham.uppmax.uu.se
 }
 function cheat() {
-  curl "cheat.sh/$1"
+    curl "cheat.sh/$1"
 }
 #show dots for slow autocompletion
-expand-or-complete-with-dots() {
-  echo -n "\e[31m...\e[0m"
-  zle expand-or-complete
-  zle redisplay
+LISTMAX=0
+unsetopt LIST_AMBIGUOUS MENU_COMPLETE COMPLETE_IN_WORD
+setopt AUTO_MENU AUTO_LIST LIST_PACKED
+unambigandmenu() {
+    echo -n "\e[31m...\e[0m"
+    # avoid opening the list on the first expand
+    unsetopt AUTO_LIST
+    zle expand-or-complete
+    setopt AUTO_LIST
+    zle magic-space
+    zle backward-delete-char
+    zle expand-or-complete
+    zle redisplay
 }
-zle -N expand-or-complete-with-dots
-bindkey "^I" expand-or-complete-with-dot
+zle -N unambigandmenu
+bindkey "^i" unambigandmenu
+
 function lsdd() {
     if [ -n "$1" ]
     then
@@ -190,20 +246,28 @@ bgnotify_threshold=60  ## set your own notification threshold
 # fi
 
 
-# #fixes for autojump
-# [[ -s $(brew --prefix)/etc/profile.d/autojump.sh ]] && . $(brew --prefix)/etc/profile.d/autojump.sh
+#fixes for autojump
+[[ -s $(brew --prefix)/etc/profile.d/autojump.sh ]] && . $(brew --prefix)/etc/profile.d/autojump.sh
 
 
 #colorize ls output
 alias ls='lsdd'
 # alias ls='ls --color=auto'
 
+# fzf config
+export FZF_BASE=/usr/local/opt/fzf
+export FZF_DEFAUL_OPTS='
+--color fg:-1,bg:-1,hl:230,fg+:3,bg+:233,hl+:229
+--color info:150,prompt:110,spinner:150,pointer:167,marker:174
+'
+
 #fzf-tab config
+
 zstyle ":completion:*:git-checkout:*" sort false
+zstyle -d ':completion:*' format
 zstyle ':completion:*:descriptions' format '[%d]'
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 zstyle ':fzf-tab:*' switch-group ',' '.'
-
 zstyle ':fzf-tab:*' fzf-bindings 'space:accept,backward-eof:abort'   # Space as accept, abort when deleting empty space
 zstyle ':fzf-tab:*' print-query ctrl-c        # Use input as result when ctrl-c
 zstyle ':fzf-tab:*' accept-line enter         # Accept selected entry on enter
@@ -214,7 +278,7 @@ zstyle ':fzf-tab:complete:(cd|ls|lsd|lsdd|j):*' fzf-preview '[[ -d $realpath ]] 
 zstyle ':fzf-tab:complete:((micro|cp|mv|rm|bat|less|code|nano|atom):argument-rest|kate:*)' fzf-preview 'bat --color=always -- $realpath 2>/dev/null || ls --color=always -- $realpath'
 zstyle ':fzf-tab:complete:updatelocal:argument-rest' fzf-preview "git --git-dir=$UPDATELOCAL_GITDIR/\${word}/.git log --color --date=short --pretty=format:'%Cgreen%cd %h %Creset%s %Cred%d%Creset ||%b' ..FETCH_HEAD 2>/dev/null"
 zstyle ':fzf-tab:complete:updatelocal:argument-rest' fzf-flags --preview-window=down:5:wrap
-
+enable-fzf-tab
 
 export PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH"
 export PATH="$HOME/.rbenv/bin:$PATH"
@@ -226,22 +290,22 @@ if which fasd >/dev/null; then
     eval "$(fasd --init auto)"
 fi
 #
-# #autojump + fzf
-# j() {
-#     if [[ "$#" -ne 0 ]]; then
-#         cd $(autojump $@)
-#         return
-#     fi
-#     cd "$(autojump -s | sort -k1gr | awk '$1 ~ /[0-9]:/ && $2 ~ /^\// { for (i=2; i<=NF; i++) { print $(i) } }' |  fzf --height 40% --reverse --inline-info)"
-# }
+#autojump + fzf
+j() {
+    if [[ "$#" -ne 0 ]]; then
+        cd $(autojump $@)
+        return
+    fi
+    cd "$(autojump -s | sort -k1gr | awk '$1 ~ /[0-9]:/ && $2 ~ /^\// { for (i=2; i<=NF; i++) { print $(i) } }' |  fzf --height 40% --reverse --inline-info)"
+}
 
-
-# fzf stuff
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+# enable-fzf-tab
 
 export PATH="/usr/local/opt/ruby/bin:$PATH"
 export PATH="/usr/local/sbin:$PATH"
+export PATH="$HOME/.cargo/bin:$PATH"
 export PATH="/usr/local/opt/openssl@1.1/bin:$PATH"
+
 export RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@1.1)"
 
 # >>> conda initialize >>>
@@ -293,4 +357,5 @@ docker() {
 }
 
 export PATH="/opt/homebrew/opt/erlang@22/bin:$PATH"
-PATH=/opt/homebrew/opt/openjdk/bin:/opt/homebrew/opt/llvm/bin:/opt/homebrew/Caskroom/miniconda/base/bin:/opt/homebrew/Caskroom/miniconda/base/condabin:/usr/local/opt/openssl@1.1/bin:/usr/local/sbin:/usr/local/opt/ruby/bin:/Users/mitochondrium/.rbenv/shims:/Users/mitochondrium/.rbenv/bin:/usr/local/opt/coreutils/libexec/gnubin:/usr/local/npm_packages/bin:/usr/local/bin:/opt/homebrew/Cellar/zplug/2.4.2/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/X11/bin:/opt/homebrew/opt/fzf/bin:/Users/mitochondrium/homer/.//bin/
+
+eval $(thefuck --alias)
