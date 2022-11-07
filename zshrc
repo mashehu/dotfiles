@@ -113,6 +113,9 @@ fi
 # Initialize modules.
 source ${ZIM_HOME}/init.zsh
 
+# load .env variables
+source .env
+
 # ------------------------------
 # Post-init module configuration
 # ------------------------------
@@ -199,6 +202,10 @@ alias yad="yarn add --dev"
 alias -g latest='*(om[1])'
 alias -g tree="tree -C"
 alias cat="bat --theme=\$(defaults read -globalDomain AppleInterfaceStyle &> /dev/null && echo default || echo GitHub)"
+alias branch="git checkout master && git pull upstream master && git checkout -b"
+alias ghpr="GH_FORCE_TTY=100% gh pr list | fzf --ansi --preview 'GH_FORCE_TTY=100% gh pr view {1}' --preview-window down --header-lines 3 | awk '{print $1}' | xargs gh pr checkout"
+alias masked="maskedemail-cli --token $fastmail_token"
+
 
 function autotunnel(){
     autossh -M 0 -o "ServerAliveInterval 30" -o "ServerAliveCountMax 120" -N -L localhost:8888:$1:8888 matthi@rackham.uppmax.uu.se
@@ -224,6 +231,15 @@ unambigandmenu() {
 zle -N unambigandmenu
 bindkey "^i" unambigandmenu
 
+function exad() {
+    if [ -n "$1" ]
+    then
+        exa --icons --all --color=always --group-directories-first "$@"
+    else
+        exa --icons --all --color=always --group-directories-first
+    fi
+}
+
 function lsdd() {
     if [ -n "$1" ]
     then
@@ -234,6 +250,7 @@ function lsdd() {
 }
 # Automatically list directory contents on `cd`.
 auto-ls () { lsdd -tr}
+# auto-ls () { exad}
 # auto-ls () { ls --color=auto; }
 chpwd_functions=( auto-ls $chpwd_functions )
 
@@ -252,6 +269,7 @@ bgnotify_threshold=60  ## set your own notification threshold
 
 #colorize ls output
 alias ls='lsdd'
+# alias ls='exad'
 # alias ls='ls --color=auto'
 
 # fzf config
@@ -284,11 +302,6 @@ export PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH"
 export PATH="$HOME/.rbenv/bin:$PATH"
 eval "$(rbenv init -)"
 
-# fasd init
-if which fasd >/dev/null; then
-    # install fasd hooks and basic aliases in the shell
-    eval "$(fasd --init auto)"
-fi
 #
 #autojump + fzf
 j() {
@@ -299,7 +312,6 @@ j() {
     cd "$(autojump -s | sort -k1gr | awk '$1 ~ /[0-9]:/ && $2 ~ /^\// { for (i=2; i<=NF; i++) { print $(i) } }' |  fzf --height 40% --reverse --inline-info)"
 }
 
-# enable-fzf-tab
 
 export PATH="/usr/local/opt/ruby/bin:$PATH"
 export PATH="/usr/local/sbin:$PATH"
@@ -307,6 +319,10 @@ export PATH="$HOME/.cargo/bin:$PATH"
 export PATH="/usr/local/opt/openssl@1.1/bin:$PATH"
 
 export RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@1.1)"
+
+# go path
+export GOPATH=$HOME/go
+export PATH=$PATH:$GOPATH/bin
 
 # >>> conda initialize >>>
 # !! Contents within this block are managed by 'conda init' !!
@@ -321,6 +337,10 @@ else
     fi
 fi
 unset __conda_setup
+
+if [ -f "/opt/homebrew/Caskroom/miniconda/base/etc/profile.d/mamba.sh" ]; then
+    . "/opt/homebrew/Caskroom/miniconda/base/etc/profile.d/mamba.sh"
+fi
 # <<< conda initialize <<<
 
 
@@ -359,3 +379,17 @@ docker() {
 export PATH="/opt/homebrew/opt/erlang@22/bin:$PATH"
 
 eval $(thefuck --alias)
+
+# folder of all of your autocomplete functions
+fpath=($HOME/.zsh-completions $fpath)
+ZSH_AUTOSUGGEST_STRATEGY=(history completion)
+
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+### MANAGED BY RANCHER DESKTOP START (DO NOT EDIT)
+export PATH="/Users/mitochondrium/.rd/bin:$PATH"
+### MANAGED BY RANCHER DESKTOP END (DO NOT EDIT)
+
+# 1password completions
+eval "$(op completion zsh)"; compdef _op opexport PATH="/opt/homebrew/opt/openjdk/bin:$PATH"
+

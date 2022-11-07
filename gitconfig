@@ -1,5 +1,5 @@
 [user]
-	name = Matthias Hörtenhuber
+	name = mashehu
 	email = mashehu3@gmail.com
 [gitlab]
 	name = Matthias Hörtenhuber
@@ -42,3 +42,5 @@
     minus-style = "syntax #340001"
     syntax-theme = Monokai Extended
 	side-by-side = true
+[init]
+	defaultBranch = main

@@ -31,7 +31,9 @@ zmodule sobolevn/wakatime-zsh-plugin
 zmodule ascii-soup/zsh-url-highlighter
 zmodule Tarrasch/zsh-bd
 zmodule scriptingosx/mac-zsh-completions
-
+zmodule wfxr/forgit
+zmodule chrissicool/zsh-256color
+zmodule z-shell/F-Sy-H
 
 
 #
@@ -49,6 +51,7 @@ zmodule git-info
 
 # Additional completion definitions for Zsh.
 zmodule zsh-users/zsh-completions --fpath src
+zmodule z-shell/zsh-fancy-completions
 # Enables and configures smart and extensive tab completion.
 # completion must be sourced after all modules that add completion definitions.
 zmodule completion
@@ -62,7 +65,7 @@ zmodule Aloxaf/fzf-tab
 # Fish-like syntax highlighting for Zsh.
 # zsh-users/zsh-syntax-highlighting must be sourced after completion
 
-zmodule zsh-users/zsh-syntax-highlighting
+# zmodule zsh-users/zsh-syntax-highlighting
 # Fish-like history search (up arrow) for Zsh.
 # zsh-users/zsh-history-substring-search must be sourced after zsh-users/zsh-syntax-highlighting
 zmodule zsh-users/zsh-history-substring-search
