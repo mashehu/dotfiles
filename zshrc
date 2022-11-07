@@ -392,4 +392,3 @@ export PATH="/Users/mitochondrium/.rd/bin:$PATH"
 
 # 1password completions
 eval "$(op completion zsh)"; compdef _op opexport PATH="/opt/homebrew/opt/openjdk/bin:$PATH"
-
