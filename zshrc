@@ -114,7 +114,7 @@ fi
 source ${ZIM_HOME}/init.zsh
 
 # load .env variables
-source .env
+source ~/.env
 
 # ------------------------------
 # Post-init module configuration
@@ -231,12 +231,12 @@ unambigandmenu() {
 zle -N unambigandmenu
 bindkey "^i" unambigandmenu
 
-function exad() {
+function ezad() {
     if [ -n "$1" ]
     then
-        exa --icons --all --color=always --group-directories-first "$@"
+        eza --icons --all --color=always --group-directories-first "$@"
     else
-        exa --icons --all --color=always --group-directories-first
+        eza --icons --all --color=always --group-directories-first
     fi
 }
 
@@ -249,8 +249,8 @@ function lsdd() {
     fi
 }
 # Automatically list directory contents on `cd`.
-auto-ls () { lsdd -tr}
-# auto-ls () { exad}
+# auto-ls () { lsdd -tr}
+auto-ls () { ezad}
 # auto-ls () { ls --color=auto; }
 chpwd_functions=( auto-ls $chpwd_functions )
 
@@ -268,8 +268,8 @@ bgnotify_threshold=60  ## set your own notification threshold
 
 
 #colorize ls output
-alias ls='lsdd'
-# alias ls='exad'
+# alias ls='lsdd'
+alias ls='ezad'
 # alias ls='ls --color=auto'
 
 # fzf config
@@ -292,7 +292,7 @@ zstyle ':fzf-tab:*' accept-line enter         # Accept selected entry on enter
 zstyle ':fzf-tab:*' fzf-pad 4
 zstyle ':fzf-tab:*' prefix ''                 # No dot prefix
 zstyle ':fzf-tab:*' single-group color header # Show header for single groups
-zstyle ':fzf-tab:complete:(cd|ls|lsd|lsdd|j):*' fzf-preview '[[ -d $realpath ]] && exa --icons -1 --color=always -- $realpath'
+zstyle ':fzf-tab:complete:(cd|ls|lsd|lsdd|j):*' fzf-preview '[[ -d $realpath ]] && eza --icons -1 --color=always -- $realpath'
 zstyle ':fzf-tab:complete:((micro|cp|mv|rm|bat|less|code|nano|atom):argument-rest|kate:*)' fzf-preview 'bat --color=always -- $realpath 2>/dev/null || ls --color=always -- $realpath'
 zstyle ':fzf-tab:complete:updatelocal:argument-rest' fzf-preview "git --git-dir=$UPDATELOCAL_GITDIR/\${word}/.git log --color --date=short --pretty=format:'%Cgreen%cd %h %Creset%s %Cred%d%Creset ||%b' ..FETCH_HEAD 2>/dev/null"
 zstyle ':fzf-tab:complete:updatelocal:argument-rest' fzf-flags --preview-window=down:5:wrap
@@ -392,3 +392,9 @@ export PATH="/Users/mitochondrium/.rd/bin:$PATH"
 
 # 1password completions
 eval "$(op completion zsh)"; compdef _op opexport PATH="/opt/homebrew/opt/openjdk/bin:$PATH"
+export PATH=$PATH:/Users/mitochondrium/.pixi/bin
+eval "$(pixi completion --shell zsh)"
+
+#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
+export SDKMAN_DIR="$HOME/.sdkman"
+[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
