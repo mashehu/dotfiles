@@ -94,6 +94,7 @@ ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets)
 # ------------------
 # Initialize modules
 # ------------------
+FPATH="$(brew --prefix)/share/zsh/site-functions:${FPATH}"
 
 ZIM_HOME=${ZDOTDIR:-${HOME}}/.zim
 # Download zimfw plugin manager if missing.
@@ -114,7 +115,7 @@ fi
 source ${ZIM_HOME}/init.zsh
 
 # load .env variables
-source .env
+source ~/.env
 
 # ------------------------------
 # Post-init module configuration
@@ -194,7 +195,7 @@ POWERLEVEL9K_VCS_GIT_ICON=
 
 POWERLEVEL9K_MULTILINE_SECOND_PROMPT_PREFIX="\u2570\uf460 "
 
-export DEFAULT_USER="mitochondrium" #hide user in prompt if default user
+export DEFAULT_USER="matho180" #hide user in prompt if default user
 export HOMEBREW_CASK_OPTS="--appdir=/Applications" #give correct location to homebrew cask
 
 #aliases
@@ -230,15 +231,6 @@ unambigandmenu() {
 }
 zle -N unambigandmenu
 bindkey "^i" unambigandmenu
-
-function exad() {
-    if [ -n "$1" ]
-    then
-        exa --icons --all --color=always --group-directories-first "$@"
-    else
-        exa --icons --all --color=always --group-directories-first
-    fi
-}
 
 function lsdd() {
     if [ -n "$1" ]
@@ -292,7 +284,7 @@ zstyle ':fzf-tab:*' accept-line enter         # Accept selected entry on enter
 zstyle ':fzf-tab:*' fzf-pad 4
 zstyle ':fzf-tab:*' prefix ''                 # No dot prefix
 zstyle ':fzf-tab:*' single-group color header # Show header for single groups
-zstyle ':fzf-tab:complete:(cd|ls|lsd|lsdd|j):*' fzf-preview '[[ -d $realpath ]] && exa --icons -1 --color=always -- $realpath'
+zstyle ':fzf-tab:complete:(cd|ls|lsd|lsdd|j):*' fzf-preview '[[ -d $realpath ]] && eza --icons -1 --color=always -- $realpath'
 zstyle ':fzf-tab:complete:((micro|cp|mv|rm|bat|less|code|nano|atom):argument-rest|kate:*)' fzf-preview 'bat --color=always -- $realpath 2>/dev/null || ls --color=always -- $realpath'
 zstyle ':fzf-tab:complete:updatelocal:argument-rest' fzf-preview "git --git-dir=$UPDATELOCAL_GITDIR/\${word}/.git log --color --date=short --pretty=format:'%Cgreen%cd %h %Creset%s %Cred%d%Creset ||%b' ..FETCH_HEAD 2>/dev/null"
 zstyle ':fzf-tab:complete:updatelocal:argument-rest' fzf-flags --preview-window=down:5:wrap
@@ -392,3 +384,18 @@ export PATH="/Users/mitochondrium/.rd/bin:$PATH"
 
 # 1password completions
 eval "$(op completion zsh)"; compdef _op opexport PATH="/opt/homebrew/opt/openjdk/bin:$PATH"
+
+# # nf-core completions
+# eval "$(_NF_CORE_COMPLETE=zsh_source nf-core)"
+#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
+export SDKMAN_DIR="$HOME/.sdkman"
+[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+export PATH="/opt/homebrew/opt/node@20/bin:$PATH"
+
+# pnpm
+export PNPM_HOME="/Users/matho180/Library/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+# pnpm end

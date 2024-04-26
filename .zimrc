@@ -31,7 +31,6 @@ zmodule sobolevn/wakatime-zsh-plugin
 zmodule ascii-soup/zsh-url-highlighter
 zmodule Tarrasch/zsh-bd
 zmodule scriptingosx/mac-zsh-completions
-zmodule wfxr/forgit
 zmodule chrissicool/zsh-256color
 zmodule z-shell/F-Sy-H
 
@@ -64,7 +63,7 @@ zmodule Aloxaf/fzf-tab
 
 # Fish-like syntax highlighting for Zsh.
 # zsh-users/zsh-syntax-highlighting must be sourced after completion
-
+zmodule zdharma-continuum/fast-syntax-highlighting
 # zmodule zsh-users/zsh-syntax-highlighting
 # Fish-like history search (up arrow) for Zsh.
 # zsh-users/zsh-history-substring-search must be sourced after zsh-users/zsh-syntax-highlighting
