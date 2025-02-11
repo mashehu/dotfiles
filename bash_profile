@@ -22,10 +22,6 @@ else
     fi
 fi
 unset __conda_setup
-
-if [ -f "/opt/homebrew/Caskroom/miniconda/base/etc/profile.d/mamba.sh" ]; then
-    . "/opt/homebrew/Caskroom/miniconda/base/etc/profile.d/mamba.sh"
-fi
 # <<< conda initialize <<<
 
 

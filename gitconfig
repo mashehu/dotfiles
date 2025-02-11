@@ -4,11 +4,6 @@
 [gitlab]
 	name = Matthias Hörtenhuber
 	email = matthias.hortenhuber@ki.se
-[filter "lfs"]
-	clean = git-lfs clean -- %f
-	smudge = git-lfs smudge -- %f
-	process = git-lfs filter-process
-	required = true
 [alias]
 	lol = log --graph --decorate --pretty=oneline --abbrev-commit
 	lola = log --graph --decorate --pretty=oneline --abbrev-commit --all
@@ -26,6 +21,7 @@
 	keepBackup = true
 [push]
 	default = simple
+	autoSetupRemote = true
 [merge]
 	tool = opendiff
 [credential]
@@ -43,4 +39,10 @@
     syntax-theme = Monokai Extended
 	side-by-side = true
 [init]
-	defaultBranch = main
+	defaultBranch = master
+[gpg]
+	format = ssh
+[gpg "ssh"]
+	program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign
+[commit]
+	gpgsign = true
