@@ -136,7 +136,7 @@ if [[ ${chpwd_functions[(r)_auto_ls]} != "_auto_ls" ]]; then
 fi
 
 # Load external configurations
-[[ -s "$(brew --prefix)/etc/profile.d/autojump.sh" ]] && source "$(brew --prefix)/etc/profile.d/autojump.sh"
+# [[ -s "$(brew --prefix)/etc/profile.d/autojump.sh" ]] && source "$(brew --prefix)/etc/profile.d/autojump.sh"
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 [ -f ~/.iterm2_shell_integration.zsh ] && source ~/.iterm2_shell_integration.zsh
 [ -f "~/.config/lf/lfrc" ] && source "~/.config/lf/lfrc"
@@ -159,6 +159,7 @@ eval "$(rbenv init -)"
 eval "$(thefuck --alias)"
 eval "$(op completion zsh)"
 eval "$(pixi completion --shell zsh)"
+eval "$(zoxide init zsh --cmd j)"
 
 # Enable fzf-tab (must be at the end)
 enable-fzf-tab
@@ -166,3 +167,8 @@ enable-fzf-tab
 # Added by Windsurf
 export PATH="/Users/matho180/.codeium/windsurf/bin:$PATH"
 source /Users/matho180/.config/op/plugins.sh
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+eval "$(mise activate zsh)"
