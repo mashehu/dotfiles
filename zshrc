@@ -7,7 +7,7 @@ skip_global_compinit=1
 source ~/.env
 
 # Set default editor
-export EDITOR='code'
+export EDITOR='zed'
 
 # Theme Configuration
 POWERLEVEL9K_MODE='nerdfont-complete'
