@@ -4,7 +4,6 @@ zmodule input
 zmodule termtitle
 zmodule utility
 zmodule duration-info
-zmodule git-info
 
 # Theme
 zmodule romkatv/powerlevel10k

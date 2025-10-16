@@ -1,6 +1,7 @@
 [user]
 	name = mashehu
 	email = mashehu3@gmail.com
+	signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHZSvQy+Amju+TambyYlVF3iiq+PRig+1YLmDqM/7/Bg
 [gitlab]
 	name = Matthias Hörtenhuber
 	email = matthias.hortenhuber@ki.se
@@ -8,6 +9,8 @@
 	lol = log --graph --decorate --pretty=oneline --abbrev-commit
 	lola = log --graph --decorate --pretty=oneline --abbrev-commit --all
 	lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+	gnd = "!f() { git checkout dev && git pull upstream dev && git checkout -b $1; }; f"
+	gnm = "!f() { git checkout main && git pull upstream main && git checkout -b $1; }; f"
 [color]
 	branch = auto
 	diff = auto
@@ -17,6 +20,8 @@
 	changed = yellow
 	added = green
 	untracked = red
+[diff]
+    algorithm = histogram
 [mergetool]
 	keepBackup = true
 [push]
