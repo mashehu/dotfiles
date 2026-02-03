@@ -1,0 +1,10 @@
+README.md
+brewfile
+.crates.toml
+Untitled.itermcolors
+.git/
+.gitignore
+.gitmodules
+dotbot/
+install
+install.conf.yaml

@@ -44,7 +44,7 @@
     syntax-theme = Monokai Extended
 	side-by-side = true
 [init]
-	defaultBranch = master
+	defaultBranch = main
 [gpg]
 	format = ssh
 [gpg "ssh"]
