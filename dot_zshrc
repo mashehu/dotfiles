@@ -155,7 +155,6 @@ export SDKMAN_DIR="$HOME/.sdkman"
 [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
 
 # Initialize other tools
-eval "$(rbenv init -)"
 eval "$(thefuck --alias)"
 eval "$(op completion zsh)"
 eval "$(pixi completion --shell zsh)"
@@ -165,10 +164,8 @@ eval "$(zoxide init zsh --cmd j)"
 enable-fzf-tab
 
 # Added by Windsurf
-export PATH="/Users/matho180/.codeium/windsurf/bin:$PATH"
-source /Users/matho180/.config/op/plugins.sh
+export PATH="$HOME/.codeium/windsurf/bin:$PATH"
+source "$HOME/.config/op/plugins.sh"
 
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+# Initialize mise (handles Node, Ruby, Python, Java versions)
 eval "$(mise activate zsh)"

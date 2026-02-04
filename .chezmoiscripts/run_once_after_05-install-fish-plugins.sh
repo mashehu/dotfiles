@@ -16,20 +16,13 @@ else
     echo "Fisher already installed"
 fi
 
-# Install tide prompt theme
-if ! fish -c "type -q tide" 2>/dev/null; then
-    echo "Installing tide prompt theme..."
-    fish -c "fisher install IlanCosman/tide@v6"
+# Install all plugins from fish_plugins file
+FISH_PLUGINS_FILE="$HOME/.config/fish/fish_plugins"
+if [ -f "$FISH_PLUGINS_FILE" ]; then
+    echo "Syncing plugins from fish_plugins file..."
+    fish -c "fisher update"
 else
-    echo "Tide already installed"
-fi
-
-# Install fzf.fish for better fzf integration
-if ! fish -c "functions -q fzf_configure_bindings" 2>/dev/null; then
-    echo "Installing fzf.fish..."
-    fish -c "fisher install PatrickF1/fzf.fish"
-else
-    echo "fzf.fish already installed"
+    echo "Warning: fish_plugins file not found at $FISH_PLUGINS_FILE"
 fi
 
 echo "Fish plugins installation complete!"
