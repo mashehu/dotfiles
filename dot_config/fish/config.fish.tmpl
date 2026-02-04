@@ -1,38 +1,38 @@
-# Load environment variables first (for both interactive and non-interactive shells)
-if test -f ~/.env
-    export (cat ~/.env | grep -v '^#' | xargs)
-end
-
 if status is-interactive
     # Set default editor
     set -gx EDITOR zed
 
     # PATH configuration
-    fish_add_path /opt/homebrew/opt/llvm/bin
-    fish_add_path /opt/homebrew/opt/openjdk/bin
-    fish_add_path /opt/homebrew/opt/erlang@22/bin
-    fish_add_path /usr/local/opt/coreutils/libexec/gnubin
-    fish_add_path /usr/local/opt/ruby/bin
-    fish_add_path /usr/local/sbin
+{{- if stat "/opt/homebrew/bin/brew" }}
+    set -l brew_prefix /opt/homebrew
+{{- else }}
+    set -l brew_prefix /usr/local
+{{- end }}
+    fish_add_path $brew_prefix/bin
+    fish_add_path $brew_prefix/opt/llvm/bin
+    fish_add_path $brew_prefix/opt/openjdk/bin
+    fish_add_path $brew_prefix/opt/erlang@22/bin
+    fish_add_path $brew_prefix/opt/coreutils/libexec/gnubin
+    fish_add_path $brew_prefix/opt/ruby/bin
+    fish_add_path $brew_prefix/sbin
     fish_add_path $HOME/.cargo/bin
-    fish_add_path /usr/local/opt/openssl@1.1/bin
+    fish_add_path $brew_prefix/opt/openssl@1.1/bin
     fish_add_path $HOME/go/bin
     fish_add_path $HOME/.rd/bin
     fish_add_path $HOME/.pixi/bin
-    fish_add_path /Users/matho180/.codeium/windsurf/bin
+    fish_add_path $HOME/.codeium/windsurf/bin
 
-    # Tide theme configuration (equivalent to powerlevel10k)
-    set -g tide_left_prompt_items pwd git python newline
-    set -g tide_right_prompt_items status cmd_duration context time
-    set -g tide_time_format %H:%M:%S
+    # Tide prompt customization (overrides Rainbow theme defaults)
+    set -g tide_left_prompt_items pwd git newline
+    set -U tide_git_icon \uE0A0
+    # Remove node version from the right prompt
+    set -U tide_right_prompt_items (string match -v node $tide_right_prompt_items)
 
-    # Git icon (branch icon)
-    set -g tide_git_icon \ue0a0
-
-    # PWD icons
-    set -g tide_pwd_icon ''
-    set -g tide_pwd_icon_home ''
-    set -g tide_pwd_icon_unwritable ''
+    # History substring search keybindings (matching zsh behavior)
+    bind \e\[A history-prefix-search-backward
+    bind \e\[B history-prefix-search-forward
+    bind \cp history-prefix-search-backward
+    bind \cn history-prefix-search-forward
 
     # FZF configuration
     set -gx FZF_DEFAULT_COMMAND "fd --type file --color=always"
@@ -44,22 +44,34 @@ if status is-interactive
     set -g fzf_fd_opts --hidden --exclude=.git
 
     # Aliases
-    alias ls='ezad'
+    alias ls='eza'
     alias cat='bat --theme=(if test (defaults read -globalDomain AppleInterfaceStyle 2>/dev/null) = Dark; echo default; else; echo GitHub; end)'
     alias branch='git checkout master && git pull upstream master && git checkout -b'
     alias ghpr='GH_FORCE_TTY=100% gh pr list | fzf --ansi --preview "GH_FORCE_TTY=100% gh pr view {1}" --preview-window down --header-lines 3 | awk \'{print $1}\' | xargs gh pr checkout'
     alias masked='maskedemail-cli --token $fastmail_token'
     alias python='python3'
 
-    # Initialize rbenv
-    if command -v rbenv >/dev/null
-        rbenv init - fish | source
+    # remove greeting
+    set fish_greeting
+
+    # Functions
+    function ezad
+        if test (count $argv) -eq 0
+            eza --icons --all --color=always --group-directories-first
+        else
+            eza --icons --all --color=always --group-directories-first $argv
+        end
     end
 
-    # Initialize thefuck
-    if command -v thefuck >/dev/null
-        thefuck --alias | source
+    # Auto ls after cd (matching zsh chpwd_functions)
+    function __auto_ls_after_cd --on-variable PWD
+        if status is-interactive
+            eza --icons --all --color=always --group-directories-first
+        end
     end
+
+    # Initialize direnv for per-directory environment variables
+    command -q direnv && direnv hook fish | source
 
     # Initialize 1Password CLI
     if command -v op >/dev/null
@@ -79,20 +91,32 @@ if status is-interactive
         zoxide init fish --cmd j | source
     end
 
-    # Initialize mise (formerly rtx)
+    # Initialize mise (formerly rtx) - handles Node, Ruby, Python, Java versions
     if command -v mise >/dev/null
         mise activate fish | source
     end
 
     # Initialize conda if available
+{{- if stat "/opt/homebrew/bin/brew" }}
     if test -f /opt/homebrew/Caskroom/miniconda/base/etc/fish/conf.d/conda.fish
         source /opt/homebrew/Caskroom/miniconda/base/etc/fish/conf.d/conda.fish
     end
+{{- else }}
+    if test -f /usr/local/Caskroom/miniconda/base/etc/fish/conf.d/conda.fish
+        source /usr/local/Caskroom/miniconda/base/etc/fish/conf.d/conda.fish
+    end
+{{- end }}
 
     # Initialize mamba if available
+{{- if stat "/opt/homebrew/bin/brew" }}
     if test -f /opt/homebrew/Caskroom/miniconda/base/etc/fish/conf.d/mamba.fish
         source /opt/homebrew/Caskroom/miniconda/base/etc/fish/conf.d/mamba.fish
     end
+{{- else }}
+    if test -f /usr/local/Caskroom/miniconda/base/etc/fish/conf.d/mamba.fish
+        source /usr/local/Caskroom/miniconda/base/etc/fish/conf.d/mamba.fish
+    end
+{{- end }}
 
     # Initialize SDKMAN using bass
     if test -f $HOME/.sdkman/bin/sdkman-init.sh
