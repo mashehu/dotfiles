@@ -1,0 +1,19 @@
+[settings]
+experimental = true
+python.uv_venv_auto = "source"
+[hooks]
+cd = """
+if [ -f .pre-commit-config.yaml ] && [ -d .git ]; then
+  # Check if pre-commit hook is already installed
+  if [ ! -f .git/hooks/pre-commit ] || ! grep -q "pre-commit" .git/hooks/pre-commit 2>/dev/null; then
+    echo "📦 Installing pre-commit hooks..."
+    prek install --install-hooks
+  else
+    echo "✅ Pre-commit hooks already installed."
+  fi
+fi
+"""
+
+[tools]
+java = "21"
+node = "24"
