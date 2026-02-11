@@ -34,8 +34,15 @@ if status is-interactive
     bind \cp history-prefix-search-backward
     bind \cn history-prefix-search-forward
 
+    # Fix conflict: let fifc handle Tab instead of pisces
+    # Pisces overrides Tab for completing vars before closing quotes,
+    # but fifc provides better fzf-powered completion
+    bind \t _fifc
+    bind --mode insert \t _fifc
+
     # FZF configuration
     set -gx FZF_DEFAULT_COMMAND "fd --type file --color=always"
+    # Arrow keys navigate (default), Enter accepts selection
     set -gx FZF_DEFAULT_OPTS "--ansi --color fg:-1,bg:-1,hl:230,fg+:3,bg+:233,hl+:229 --color info:150,prompt:110,spinner:150,pointer:167,marker:174"
 
     # fzf.fish configuration
