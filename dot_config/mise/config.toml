@@ -8,8 +8,6 @@ if [ -f .pre-commit-config.yaml ] && [ -d .git ]; then
   if [ ! -f .git/hooks/pre-commit ] || ! grep -q "pre-commit" .git/hooks/pre-commit 2>/dev/null; then
     echo "📦 Installing pre-commit hooks..."
     prek install --install-hooks
-  else
-    echo "✅ Pre-commit hooks already installed."
   fi
 fi
 """

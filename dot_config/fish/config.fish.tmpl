@@ -1,4 +1,9 @@
 if status is-interactive
+    # Load environment variables from ~/.env (using bass for bash compatibility)
+    if test -f ~/.env
+        bass source ~/.env
+    end
+
     # Set default editor
     set -gx EDITOR zed
 
@@ -53,13 +58,54 @@ if status is-interactive
     # Aliases
     alias ls='eza'
     alias cat='bat --theme=(if test (defaults read -globalDomain AppleInterfaceStyle 2>/dev/null) = Dark; echo default; else; echo GitHub; end)'
-    alias branch='git checkout master && git pull upstream master && git checkout -b'
+    # Branch function: creates new branch tracking upstream but pushing to origin
+    function branch
+        set branch_name $argv[1]
+
+        # Determine which remote to use (prefer upstream, fallback to origin)
+        if git remote | grep -q '^upstream$'
+            set remote upstream
+        else
+            set remote origin
+        end
+
+        # Get the default branch from the remote
+        set default_branch (gh repo view $remote --json defaultBranchRef --jq .defaultBranchRef.name 2>/dev/null)
+
+        # Fallback to git's method if gh fails
+        if test -z "$default_branch"
+            set default_branch (git symbolic-ref refs/remotes/$remote/HEAD 2>/dev/null | sed "s@^refs/remotes/$remote/@@")
+        end
+
+        # Final fallback to common branch names
+        if test -z "$default_branch"
+            for branch in main master
+                if git rev-parse --verify $remote/$branch >/dev/null 2>&1
+                    set default_branch $branch
+                    break
+                end
+            end
+        end
+
+        # Execute branch creation
+        git checkout $default_branch && \
+        git pull $remote $default_branch && \
+        git checkout -b $branch_name && \
+        git branch --set-upstream-to=$remote/$default_branch $branch_name && \
+        git config branch.$branch_name.pushRemote origin
+    end
     alias ghpr='GH_FORCE_TTY=100% gh pr list | fzf --ansi --preview "GH_FORCE_TTY=100% gh pr view {1}" --preview-window down --header-lines 3 | awk \'{print $1}\' | xargs gh pr checkout'
     alias masked='maskedemail-cli --token $fastmail_token'
     alias python='python3'
 
     # remove greeting
     set fish_greeting
+
+    # Shared history across sessions (like zsh SHARE_HISTORY)
+    # Merge history from other sessions before displaying prompt
+    function __sync_history --on-event fish_prompt
+        history merge
+    end
 
     # Functions
     function ezad
