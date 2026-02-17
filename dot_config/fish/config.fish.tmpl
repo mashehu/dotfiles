@@ -160,24 +160,6 @@ if status is-interactive
     end
 {{- end }}
 
-    # Initialize mamba if available
-{{- if stat "/opt/homebrew/bin/brew" }}
-    if test -f /opt/homebrew/Caskroom/miniconda/base/etc/fish/conf.d/mamba.fish
-        source /opt/homebrew/Caskroom/miniconda/base/etc/fish/conf.d/mamba.fish
-    end
-{{- else }}
-    if test -f /usr/local/Caskroom/miniconda/base/etc/fish/conf.d/mamba.fish
-        source /usr/local/Caskroom/miniconda/base/etc/fish/conf.d/mamba.fish
-    end
-{{- end }}
-
-    # Initialize SDKMAN using bass
-    if test -f $HOME/.sdkman/bin/sdkman-init.sh
-        set -gx SDKMAN_DIR $HOME/.sdkman
-        # SDKMAN functions available via: bass source "$SDKMAN_DIR/bin/sdkman-init.sh"
-        # Or create wrapper functions in conf.d if needed
-    end
-
     # iTerm2 shell integration
     if test -f ~/.iterm2_shell_integration.fish
         source ~/.iterm2_shell_integration.fish
