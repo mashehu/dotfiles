@@ -1,7 +1,7 @@
 if status is-interactive
-    # Load environment variables from ~/.env (using bass for bash compatibility)
+    # Load environment variables from ~/.env
     if test -f ~/.env
-        bass source ~/.env
+        replay source ~/.env
     end
 
     # Set default editor
@@ -16,12 +16,10 @@ if status is-interactive
     fish_add_path $brew_prefix/bin
     fish_add_path $brew_prefix/opt/llvm/bin
     fish_add_path $brew_prefix/opt/openjdk/bin
-    fish_add_path $brew_prefix/opt/erlang@22/bin
     fish_add_path $brew_prefix/opt/coreutils/libexec/gnubin
     fish_add_path $brew_prefix/opt/ruby/bin
     fish_add_path $brew_prefix/sbin
     fish_add_path $HOME/.cargo/bin
-    fish_add_path $brew_prefix/opt/openssl@1.1/bin
     fish_add_path $HOME/go/bin
     fish_add_path $HOME/.rd/bin
     fish_add_path $HOME/.pixi/bin
@@ -30,7 +28,6 @@ if status is-interactive
     # Tide prompt customization (overrides Rainbow theme defaults)
     set -g tide_left_prompt_items pwd git newline
     set -U tide_git_icon \uE0A0
-    # Remove node version from the right prompt
     set -U tide_right_prompt_items (string match -v node $tide_right_prompt_items)
 
     # History substring search keybindings (matching zsh behavior)
@@ -57,7 +54,8 @@ if status is-interactive
 
     # Aliases
     alias ls='eza'
-    alias cat='bat --theme=(if test (defaults read -globalDomain AppleInterfaceStyle 2>/dev/null) = Dark; echo default; else; echo GitHub; end)'
+    set -l _bat_theme (test (defaults read -globalDomain AppleInterfaceStyle 2>/dev/null) = Dark && echo default || echo GitHub)
+    alias cat="bat --theme=$_bat_theme"
     # Branch function: creates new branch tracking upstream but pushing to origin
     function branch
         set branch_name $argv[1]
@@ -127,7 +125,7 @@ if status is-interactive
     command -q direnv && direnv hook fish | source
 
     # Initialize 1Password CLI
-    if command -v op >/dev/null
+    if command -q op
         op completion fish | source
         if test -f ~/.config/op/plugins.sh
             # Note: plugins.sh is bash, may need fish conversion
@@ -135,17 +133,17 @@ if status is-interactive
     end
 
     # Initialize pixi
-    if command -v pixi >/dev/null
+    if command -q pixi
         pixi completion --shell fish | source
     end
 
     # Initialize zoxide (equivalent to autojump/z)
-    if command -v zoxide >/dev/null
+    if command -q zoxide
         zoxide init fish --cmd j | source
     end
 
     # Initialize mise (formerly rtx) - handles Node, Ruby, Python, Java versions
-    if command -v mise >/dev/null
+    if command -q mise
         mise activate fish | source
     end
 
