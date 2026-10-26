@@ -172,7 +172,9 @@ function brewup() {
             base = substr(new, 1, length(n)); suffix = substr(new, length(n) + 1)
             if (idx) out = substr(base, 1, pos - 1) color substr(base, pos) "\033[0m" (suffix != "" ? "\033[2m" suffix "\033[0m" : "")
             else     out = base color suffix "\033[0m"
-            print substr($0, 1, RSTART + 2) out substr($0, RSTART + RLENGTH)
+            # package name gets the same color as its version bump
+            name = $1
+            print color name "\033[0m" substr($0, length(name) + 1, RSTART + 2 - length(name)) out substr($0, RSTART + RLENGTH)
             next
         }
         { print }
@@ -196,6 +198,104 @@ function _auto_ls() {
 typeset -ga chpwd_functions
 if [[ ${chpwd_functions[(r)_auto_ls]} != "_auto_ls" ]]; then
     chpwd_functions+=(_auto_ls)
+fi
+
+# F-Sy-H chroma painting subcommands up to three levels deep (`gh pr checkout`,
+# `docker compose up`), but only names the tool actually has. The built-in generic
+# chroma paints any first word. Valid names are parsed from `<cmd> [words] --help`
+# (or `<cmd> help [words]`) in the background and cached on disk for a week
+typeset -ga _fsh_subcmd_commands=(
+    gh docker kubectl mise uv pixi rustup conda terraform nf-core nextflow brew go
+)
+# Commands whose --help doesn't list all subcommands: arguments that print them instead
+typeset -gA _fsh_subcmd_listers=(
+    brew 'commands --quiet --include-aliases'
+)
+typeset -g _fsh_subcmd_dir=${XDG_CACHE_HOME:-$HOME/.cache}/zsh-subcmd
+typeset -gA _fsh_subcmd_cache
+
+# Writes the subcommand names of command path $1 (e.g. "gh pr") to
+# $_fsh_subcmd_dir/gh/pr.list; writes nothing if the tool fails, so a later shell retries
+function _fsh_subcmd_probe() {
+    emulate -L zsh
+    local -a words=( ${=1} ) tries names
+    local exe out line args file=$_fsh_subcmd_dir/${1// //}.list
+    integer ok=0
+    # First executable in PATH; $commands may point at a broken symlink
+    for exe in $(whence -ap $words[1]); do [[ -x $exe ]] && break; done
+    [[ -x $exe ]] || return
+
+    if (( $#words == 1 )) && [[ -n ${_fsh_subcmd_listers[$words[1]]} ]]; then
+        tries=( ${_fsh_subcmd_listers[$words[1]]} )
+    else
+        tries=( "${words[2,-1]} --help" "help ${words[2,-1]}" )
+    fi
+    for args in $tries; do
+        out=$(PAGER=cat GH_PAGER=cat MANPAGER=cat NO_COLOR=1 TERM=dumb \
+            perl -e 'alarm shift; exec @ARGV' 10 $exe ${=args} </dev/null 2>&1) && ok=1
+        # Indented lowercase name, then a description, a `<arg>`, or nothing:
+        # `  checkout:   Check out…`, `  compose*  Docker Compose`, `  install <id>`
+        for line in ${(f)out}; do
+            [[ $line =~ '^[[:blank:]]{0,8}([a-z][a-z0-9_-]*)\*?(:?([[:blank:]]{2,}|$)|:? [<[])' ]] \
+                && names+=( $match[1] )
+        done
+        (( $#names )) && break
+    done
+    (( $#names || ok )) || return
+
+    mkdir -p ${file:h}
+    print -r -- ${(u)names} >| $file.$$
+    mv -f $file.$$ $file
+}
+
+function _fsh_chroma_subcmd() {
+    builtin emulate -L zsh
+    builtin setopt extended_glob
+
+    (( next_word = (this_word & BIT_case_code) | 2 | 8192 ))
+    [[ $__arg_type == 3 ]] && return 2
+
+    local __first_call=$1 __wrd=$2 __start_pos=$3 __end_pos=$4
+
+    if (( __first_call )); then
+        _fsh_state[chroma-subcmd-path]=${__wrd:t}
+        return 1
+    elif (( in_redirection > 0 || this_word & 128 )) || [[ $__wrd == "<<<" || $__wrd == -*=* ]]; then
+        return 1
+    fi
+
+    # Release the takeover unless this word is a valid subcommand of the path so far
+    (( next_word &= ~8192 ))
+    [[ $__wrd == [[:alpha:]][[:alnum:]_-]# ]] || return 1
+
+    local key=${_fsh_state[chroma-subcmd-path]} names
+    local file=$_fsh_subcmd_dir/${key// //}.list
+    names=${_fsh_subcmd_cache[$key]}
+    if [[ ( -z $names || $names == pending ) && -r $file ]]; then
+        names=" $(<$file) "
+        _fsh_subcmd_cache[$key]=$names
+        local -a stale=( $file(Nm+7) )
+        (( $#stale )) && _fsh_subcmd_probe $key &>/dev/null &!
+    elif [[ -z $names ]]; then
+        _fsh_subcmd_cache[$key]=pending
+        _fsh_subcmd_probe $key &>/dev/null &!
+    fi
+    [[ $names == *" $__wrd "* ]] || return 1
+
+    _fsh_state[chroma-subcmd-path]+=" $__wrd"
+    (( ${#${=_fsh_state[chroma-subcmd-path]}} < 4 )) && (( next_word |= 8192 ))
+
+    (( __start = __start_pos - ${#PREBUFFER}, __end = __end_pos - ${#PREBUFFER}, __start >= 0 )) \
+        && reply+=("$__start $__end ${_fsh_styles[${_fsh_theme_name}subcommand]}")
+    (( this_word = next_word ))
+    _start_pos=$_end_pos
+    return 0
+}
+if (( ${+_fsh_state} )); then
+    for cmd in $_fsh_subcmd_commands; do
+        _fsh_state[chroma-$cmd]=_fsh_chroma_subcmd
+    done
+    unset cmd
 fi
 
 # Load external configurations
