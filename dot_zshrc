@@ -115,6 +115,24 @@ zstyle ':fzf-tab:*' prefix ''
 zstyle ':fzf-tab:*' single-group color header
 zstyle ':fzf-tab:complete:(cd|ls|lsd|lsdd|j):*' fzf-preview '[[ -d $realpath ]] && eza --icons -1 --color=always -- $realpath'
 zstyle ':fzf-tab:complete:((micro|cp|mv|rm|bat|less|code|nano|atom):argument-rest|kate:*)' fzf-preview 'bat --color=always -- $realpath 2>/dev/null || ls --color=always -- $realpath'
+zstyle ':completion:*:pull-requests' sort false
+zstyle ':fzf-tab:complete:gh:*' fzf-preview '[[ $word == <-> ]] && GH_FORCE_TTY=100% gh pr view $word'
+
+# gh's own completion offers no PRs for `gh pr checkout <tab>` (it falls back to files),
+# so list open PRs here; GH_PR_COMPLETION_LIMIT sets how many (default 200)
+function _gh_with_prs() {
+    if [[ $words[2] == pr && $words[3] == (checkout|co) && $PREFIX != -* ]] && (( CURRENT >= 4 )); then
+        local -a prs
+        prs=(${(f)"$(gh pr list --limit ${GH_PR_COMPLETION_LIMIT:-200} --json number,title,author \
+            --template '{{range .}}{{.number}}:{{.title}} ({{.author.login}}){{"\n"}}{{end}}' 2>/dev/null)"})
+        _describe -t pull-requests 'pull request' prs
+    else
+        _gh "$@"
+        # autoloading _gh runs its `compdef _gh gh`, so claim gh back
+        compdef _gh_with_prs gh
+    fi
+}
+compdef _gh_with_prs gh
 
 # Aliases and functions
 alias ls='ezad'
