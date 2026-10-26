@@ -1,0 +1,4 @@
+always_yes: true
+show_channel_urls: true
+solver: libmamba
+auto_activate_base: false
