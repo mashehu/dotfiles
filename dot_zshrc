@@ -168,9 +168,25 @@ function brewup() {
         return
     fi
 
+    # Map each package to its GitHub releases page (name<TAB>url per line), found in the
+    # formula/cask source, head or homepage URLs; packages not hosted on GitHub get no link
+    local -a names
+    names=(${(f)"$(print -r -- "$preview" | awk '/^==> Would upgrade/ { f = 1; next } /^==>/ { f = 0 } f && / -> / { print $1 }')"})
+    local links
+    # one unresolvable name fails the whole lookup, so fall back to the (slower) full installed set
+    links=$({ brew info --json=v2 "${names[@]}" || brew info --json=v2 --installed } 2>/dev/null | jq -r '
+        def repo: [.[] | strings | capture("github\\.com/(?<r>[^/]+/[^/#?]+)").r | sub("\\.git$"; "")] | first;
+        (.formulae[] | {k: [.name, .full_name], r: ([.urls.stable.url, .urls.head.url, .homepage] | repo)}),
+        (.casks[]    | {k: [.token, .full_token], r: ([.url, .homepage] | repo)})
+        | select(.r) | .k[] as $k | "\($k)\thttps://github.com/\(.r)/releases"')
+
     # Color the new version: red = major, yellow = minor, green = patch, dim = revision/build only.
     # Only the part from the first changed component onward is colored.
-    print -r -- "$preview" | awk '
+    print -r -- "$preview" | LINKS=$links awk '
+        BEGIN {
+            n = split(ENVIRON["LINKS"], rows, "\n")
+            for (i = 1; i <= n; i++) if (split(rows[i], kv, "\t") == 2) url[kv[1]] = kv[2]
+        }
         /^==> Would upgrade/ { in_list = 1; print; next }
         /^==>/ { in_list = 0 }
         in_list && match($0, /-> [^ ]+/) {
@@ -190,9 +206,11 @@ function brewup() {
             base = substr(new, 1, length(n)); suffix = substr(new, length(n) + 1)
             if (idx) out = substr(base, 1, pos - 1) color substr(base, pos) "\033[0m" (suffix != "" ? "\033[2m" suffix "\033[0m" : "")
             else     out = base color suffix "\033[0m"
-            # package name gets the same color as its version bump
+            # package name gets the same color as its version bump, and links (OSC 8) to its GitHub releases
             name = $1
-            print color name "\033[0m" substr($0, length(name) + 1, RSTART + 2 - length(name)) out substr($0, RSTART + RLENGTH)
+            label = color name "\033[0m"
+            if (name in url) label = "\033]8;;" url[name] "\033\\" label "\033]8;;\033\\"
+            print label substr($0, length(name) + 1, RSTART + 2 - length(name)) out substr($0, RSTART + RLENGTH)
             next
         }
         { print }
