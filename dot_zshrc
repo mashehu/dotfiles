@@ -1,5 +1,13 @@
 #!/usr/bin/zsh
 
+# Powerlevel10k instant prompt: draws the prompt from cache immediately while the rest
+# of this file loads. Must stay near the top; anything needing console input goes above it.
+# quiet: iTerm2 shell integration prints escape codes at startup, which are harmless
+typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+    source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
 # Prevent initialization of completion system before zim
 skip_global_compinit=1
 
@@ -32,8 +40,6 @@ POWERLEVEL9K_ANACONDA_VISUAL_IDENTIFIER_EXPANSION='🐍'         # snake
 
 # History configuration
 HISTFILE="${HOME}/.zshhistory"
-SAVEHIST=10000
-HISTSIZE=10000
 setopt HIST_IGNORE_ALL_DUPS
 setopt append_history
 setopt extended_history
@@ -51,12 +57,7 @@ path=(
     $HOME/.local/bin
     /opt/homebrew/opt/llvm/bin
     /opt/homebrew/opt/openjdk/bin
-    /opt/homebrew/opt/erlang@22/bin
-    /usr/local/opt/coreutils/libexec/gnubin
-    /usr/local/opt/ruby/bin
-    /usr/local/sbin
     $HOME/.cargo/bin
-    /usr/local/opt/openssl@1.1/bin
     $HOME/go/bin
     $HOME/.rd/bin
     $HOME/.pixi/bin
@@ -67,6 +68,8 @@ path=(
 ZSH_AUTOSUGGEST_MANUAL_REBIND=1
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=242'
 ZSH_AUTOSUGGEST_STRATEGY=(history completion)
+ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20  # don't suggest for long/pasted lines
+ZSH_AUTOSUGGEST_USE_ASYNC=1
 
 # Initialize Zim
 ZIM_HOME=${ZDOTDIR:-${HOME}}/.zim
@@ -85,6 +88,10 @@ fi
 
 # Load Zim
 source ${ZIM_HOME}/init.zsh
+
+# History size (after Zim: its environment module sets its own HISTSIZE)
+SAVEHIST=100000
+HISTSIZE=100000
 
 # History Substring Search Configuration
 HISTORY_SUBSTRING_SEARCH_FUZZY=true
@@ -117,6 +124,16 @@ zstyle ':fzf-tab:complete:(cd|ls|lsd|lsdd|j):*' fzf-preview '[[ -d $realpath ]] 
 zstyle ':fzf-tab:complete:((micro|cp|mv|rm|bat|less|code|nano|atom):argument-rest|kate:*)' fzf-preview 'bat --color=always -- $realpath 2>/dev/null || ls --color=always -- $realpath'
 zstyle ':completion:*:pull-requests' sort false
 zstyle ':fzf-tab:complete:gh:*' fzf-preview '[[ $word == <-> ]] && GH_FORCE_TTY=100% gh pr view $word'
+# git: diff for files, log/show for refs
+zstyle ':fzf-tab:complete:git-(add|diff|restore):*' fzf-preview 'git diff $word | delta'
+zstyle ':fzf-tab:complete:git-log:*' fzf-preview 'git log --oneline --graph --color=always $word'
+zstyle ':fzf-tab:complete:git-show:*' fzf-preview 'git show --color=always $word | delta'
+zstyle ':fzf-tab:complete:git-(checkout|switch):*' fzf-preview \
+    '[[ -e $word ]] && git diff $word | delta || git log --oneline --graph --color=always -20 $word'
+# kill: full command line of the selected process
+zstyle ':completion:*:*:*:*:processes' command 'ps -u $USER -o pid,user,comm -w -w'
+zstyle ':fzf-tab:complete:(kill|ps):argument-rest' fzf-preview '[[ $group == "[process ID]" ]] && ps -p $word -o command= -w -w'
+zstyle ':fzf-tab:complete:(kill|ps):argument-rest' fzf-flags --preview-window=down:3:wrap
 
 # gh's own completion offers no PRs for `gh pr checkout <tab>` (it falls back to files),
 # so list open PRs here; GH_PR_COMPLETION_LIMIT sets how many (default 200)
@@ -139,7 +156,7 @@ alias ls='ezad'
 alias cat="bat --theme=\$(defaults read -globalDomain AppleInterfaceStyle &> /dev/null && echo default || echo GitHub)"
 alias branch="git checkout master && git pull upstream master && git checkout -b"
 alias ghpr="GH_FORCE_TTY=100% gh pr list | fzf --ansi --preview 'GH_FORCE_TTY=100% gh pr view {1}' --preview-window down --header-lines 3 | awk '{print $1}' | xargs gh pr checkout"
-alias masked="maskedemail-cli --token $fastmail_token"
+alias masked='maskedemail-cli --token $fastmail_token'
 alias python="python3"
 
 function ezad() {
@@ -164,7 +181,7 @@ function brewup() {
 
     if [[ $preview != *"Would upgrade"* ]]; then
         print -r -- "$preview"
-        brew cleanup
+        print -P "%B%F{blue}==>%f Running brew cleanup...%b"; brew cleanup
         return
     fi
 
@@ -220,7 +237,7 @@ function brewup() {
     local answer
     read -r "answer?Proceed with upgrade? [Y/n] "
     case $answer in
-        ""|[yY]|[yY]es) brew upgrade --yes "$@" && brew cleanup ;;
+        ""|[yY]|[yY]es) brew upgrade --yes "$@" && _evalcache_clear >/dev/null && print -P "%B%F{blue}==>%f Running brew cleanup...%b" && brew cleanup ;;
         *) echo "Aborted."; return 1 ;;
     esac
 }
@@ -336,9 +353,7 @@ fi
 
 # Load external configurations
 # [[ -s "$(brew --prefix)/etc/profile.d/autojump.sh" ]] && source "$(brew --prefix)/etc/profile.d/autojump.sh"
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 [ -f ~/.iterm2_shell_integration.zsh ] && source ~/.iterm2_shell_integration.zsh
-[ -f "~/.config/lf/lfrc" ] && source "~/.config/lf/lfrc"
 
 # Initialize conda if available
 if [ -f "/opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh" ]; then
@@ -348,18 +363,17 @@ if [ -f "/opt/homebrew/Caskroom/miniconda/base/etc/profile.d/mamba.sh" ]; then
     . "/opt/homebrew/Caskroom/miniconda/base/etc/profile.d/mamba.sh"
 fi
 
-# Initialize other tools
-eval "$(thefuck --alias)"
-eval "$(op completion zsh)"
-eval "$(pixi completion --shell zsh)"
-eval "$(zoxide init zsh --cmd j)"
+# Initialize other tools; _evalcache (mroth/evalcache) caches each command's output in
+# ~/.zsh-evalcache, so run `_evalcache_clear` after upgrading one of them (brewup does)
+_evalcache thefuck --alias
+_evalcache op completion zsh
+_evalcache pixi completion --shell zsh
+_evalcache zoxide init zsh --cmd j
 
 # Enable fzf-tab (must be at the end)
 enable-fzf-tab
 
-# Added by Windsurf
-export PATH="$HOME/.codeium/windsurf/bin:$PATH"
 source "$HOME/.config/op/plugins.sh"
 
 # Initialize mise (handles Node, Ruby, Python, Java versions)
-eval "$(mise activate zsh)"
+_evalcache mise activate zsh

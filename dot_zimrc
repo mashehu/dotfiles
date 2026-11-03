@@ -11,7 +11,6 @@ zmodule romkatv/powerlevel10k
 # Tools and utilities
 zmodule git
 zmodule homebrew
-zmodule fasd
 zmodule fzf
 zmodule hlissner/zsh-autopair
 zmodule sobolevn/wakatime-zsh-plugin
@@ -19,6 +18,8 @@ zmodule ascii-soup/zsh-url-highlighter
 zmodule Tarrasch/zsh-bd
 zmodule wfxr/forgit
 zmodule chrissicool/zsh-256color
+zmodule mroth/evalcache
+zmodule MichaelAquilina/zsh-you-should-use
 
 # Oh My Zsh plugins (without completions)
 zmodule ohmyzsh/ohmyzsh -f 'plugins/bgnotify' -s 'plugins/bgnotify/bgnotify.plugin.zsh' -f 'plugins/extract' -s 'plugins/extract/extract.plugin.zsh'
