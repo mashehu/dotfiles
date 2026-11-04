@@ -237,7 +237,7 @@ function brewup() {
     local answer
     read -r "answer?Proceed with upgrade? [Y/n] "
     case $answer in
-        ""|[yY]|[yY]es) brew upgrade --yes "$@" && _evalcache_clear >/dev/null && print -P "%B%F{blue}==>%f Running brew cleanup...%b" && brew cleanup ;;
+        ""|[yY]|[yY]es) brew upgrade --yes "$@" && rm -f "${ZSH_EVALCACHE_DIR:-$HOME/.zsh-evalcache}"/init-*(N) && print -P "%B%F{blue}==>%f Running brew cleanup...%b" && brew cleanup ;;
         *) echo "Aborted."; return 1 ;;
     esac
 }
@@ -364,7 +364,7 @@ if [ -f "/opt/homebrew/Caskroom/miniconda/base/etc/profile.d/mamba.sh" ]; then
 fi
 
 # Initialize other tools; _evalcache (mroth/evalcache) caches each command's output in
-# ~/.zsh-evalcache, so run `_evalcache_clear` after upgrading one of them (brewup does)
+# ~/.zsh-evalcache, so clear it after upgrading one of them (brewup does)
 _evalcache thefuck --alias
 _evalcache op completion zsh
 _evalcache pixi completion --shell zsh
