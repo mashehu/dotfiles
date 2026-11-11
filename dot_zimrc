@@ -33,7 +33,7 @@ zmodule scriptingosx/mac-zsh-completions --fpath src
 zmodule completion
 
 # Modules that wrap widgets (must be after completion)
-zmodule z-shell/F-Sy-H
+zmodule zdharma-continuum/fast-syntax-highlighting
 zmodule zsh-users/zsh-history-substring-search
 zmodule zsh-users/zsh-autosuggestions
 
