@@ -171,9 +171,100 @@ function autotunnel() {
     autossh -M 0 -o "ServerAliveInterval 30" -o "ServerAliveCountMax 120" -N -L "localhost:8888:${1}:8888" matthi@rackham.uppmax.uu.se
 }
 
+# Read `brew info --json=v2` documents on stdin and print name<TAB>url for every package
+# (all its names and full names) for which the jq expression $1 yields a URL
+function _brew_links() {
+    jq -r '
+        def repo: [.[] | strings | capture("github\\.com/(?<r>[^/]+/[^/#?]+)").r | sub("\\.git$"; "")] | first;
+        '"def url: $1;"'
+        (.formulae[], .casks[]) | url as $u | select($u)
+        | [.name, .full_name, .token, .full_token | strings] | unique[] | "\(.)\t\($u)"'
+}
+
+# awk prelude shared by brewup's filters: url[] from name<TAB>url lines in $LINKS,
+# osc8() for terminal hyperlinks, new_kind() for brew update's "New ..." sections, and
+# table() for a rounded box table fitted to $COLUMNS
+_brewup_awk='
+    function osc8(u, t) { return "\033]8;;" u "\033\\" t "\033]8;;\033\\" }
+    function new_kind() { return /New Formulae/ ? "formula" : /New Casks/ ? "cask" : "" }
+    BEGIN {
+        n = split(ENVIRON["LINKS"], rows, "\n")
+        for (i = 1; i <= n; i++) if (split(rows[i], kv, "\t") == 2) url[kv[1]] = kv[2]
+        cols = ENVIRON["COLUMNS"] + 0; if (!cols) cols = 80
+        V = "\033[2m│\033[0m"
+    }
+    function rep(c, n,   s) { s = ""; while (n-- > 0) s = s c; return s }
+    function border(l, m, r, nc,   c, s) {
+        s = l; for (c = 1; c <= nc; c++) s = s rep("─", W[c] + 2) (c < nc ? m : r)
+        return "\033[2m" s "\033[0m"
+    }
+    # Print hdr[1..nc] and rows cell[1..nr, 1..nc]; vis[r, c] is a cell'"'"'s visible width (cells
+    # may hold escapes). Column fit (if any) is cut to fit the terminal; its cells must be plain text.
+    function table(nr, nc, fit,   r, c, rest, line, t) {
+        for (c = 1; c <= nc; c++) {
+            W[c] = length(hdr[c])
+            for (r = 1; r <= nr; r++) if (vis[r, c] > W[c]) W[c] = vis[r, c]
+        }
+        if (fit) {
+            rest = cols - 1; for (c = 1; c <= nc; c++) if (c != fit) rest -= W[c] + 3
+            if (W[fit] + 3 > rest && rest >= 13) W[fit] = rest - 3
+        }
+        print border("╭", "┬", "╮", nc)
+        line = V; for (c = 1; c <= nc; c++) line = line " \033[1m" hdr[c] "\033[0m" rep(" ", W[c] - length(hdr[c])) " " V
+        print line
+        print border("├", "┼", "┤", nc)
+        for (r = 1; r <= nr; r++) {
+            line = V
+            for (c = 1; c <= nc; c++) {
+                t = cell[r, c]
+                if (c == fit && vis[r, c] > W[c]) { t = substr(t, 1, W[c] - 1) "…"; vis[r, c] = W[c] }
+                line = line " " t rep(" ", W[c] - vis[r, c]) " " V
+            }
+            print line
+        }
+        print border("╰", "┴", "╯", nc)
+    }
+'
+
 # brew update + upgrade + cleanup, with a semver-colored upgrade preview
 function brewup() {
-    brew update || return
+    setopt local_options pipefail
+    # Stream brew update's output live (to stderr), except its "New Formulae"/"New Casks"
+    # sections, which are collected as kind<TAB>name<TAB>description for the table below.
+    # HOMEBREW_COLOR keeps brew's colors although its stdout is a pipe.
+    local new
+    new=$(HOMEBREW_COLOR=1 brew update | awk "$_brewup_awk"'
+        /==>/ { kind = new_kind(); if (kind) next }
+        kind && match($0, /^[^: ]+/) { print kind "\t" substr($0, 1, RLENGTH) "\t" substr($0, RLENGTH + 3); next }
+        { print > "/dev/stderr"; fflush() }') || return
+
+    if [[ -n $new ]]; then
+        # Look up homepages; formulae and casks separately, so an unresolvable name only
+        # costs its own kind's links
+        local -a new_formulae=(${(f)"$(print -r -- "$new" | awk -F'\t' '$1 == "formula" { print $2 }')"})
+        local -a new_casks=(${(f)"$(print -r -- "$new" | awk -F'\t' '$1 == "cask" { print $2 }')"})
+        local new_links
+        new_links=$({
+            (( $#new_formulae )) && brew info --json=v2 --formula "${new_formulae[@]}"
+            (( $#new_casks )) && brew info --json=v2 --cask "${new_casks[@]}"
+        } 2>/dev/null | _brew_links .homepage)
+        # Table of new packages, names linked (OSC 8) to their homepage, falling back to
+        # their formulae.brew.sh page (tap-qualified user/tap/name ones have none)
+        print -r -- "$new" | COLUMNS=$COLUMNS LINKS=$new_links awk -F'\t' "$_brewup_awk"'
+            {
+                n = $2; link = n in url ? url[n] : n !~ /\// ? "https://formulae.brew.sh/" $1 "/" n : ""
+                label = "\033[1m" n "\033[0m"
+                cell[NR, 1] = link != "" ? osc8(link, label) : label;       vis[NR, 1] = length(n)
+                cell[NR, 2] = $3;                                            vis[NR, 2] = length($3)
+                cell[NR, 3] = ($1 == "cask" ? "\033[35m" : "\033[36m") $1 "\033[0m"; vis[NR, 3] = length($1)
+            }
+            END {
+                print "\033[1;34m==>\033[0m \033[1mNew formulae and casks\033[0m"
+                hdr[1] = "Name"; hdr[2] = "Description"; hdr[3] = "Type"
+                table(NR, 3, 2)
+            }'
+        print
+    fi
 
     # Let brew compute the upgrade set itself, so the preview matches what will actually run
     local preview
@@ -185,30 +276,25 @@ function brewup() {
         return
     fi
 
-    # Map each package to its GitHub releases page (name<TAB>url per line), found in the
-    # formula/cask source, head or homepage URLs; packages not hosted on GitHub get no link
     local -a names
     names=(${(f)"$(print -r -- "$preview" | awk '/^==> Would upgrade/ { f = 1; next } /^==>/ { f = 0 } f && / -> / { print $1 }')"})
     local links
     # one unresolvable name fails the whole lookup, so fall back to the (slower) full installed set
-    links=$({ brew info --json=v2 "${names[@]}" || brew info --json=v2 --installed } 2>/dev/null | jq -r '
-        def repo: [.[] | strings | capture("github\\.com/(?<r>[^/]+/[^/#?]+)").r | sub("\\.git$"; "")] | first;
-        (.formulae[] | {k: [.name, .full_name], r: ([.urls.stable.url, .urls.head.url, .homepage] | repo)}),
-        (.casks[]    | {k: [.token, .full_token], r: ([.url, .homepage] | repo)})
-        | select(.r) | .k[] as $k | "\($k)\thttps://github.com/\(.r)/releases"')
+    links=$({ brew info --json=v2 "${names[@]}" || brew info --json=v2 --installed } 2>/dev/null | _brew_links '[.urls.stable.url, .urls.head.url, .url, .homepage] | repo | values | "https://github.com/\(.)/releases"')
 
     # Color the new version: red = major, yellow = minor, green = patch, dim = revision/build only.
     # Only the part from the first changed component onward is colored.
-    print -r -- "$preview" | LINKS=$links awk '
-        BEGIN {
-            n = split(ENVIRON["LINKS"], rows, "\n")
-            for (i = 1; i <= n; i++) if (split(rows[i], kv, "\t") == 2) url[kv[1]] = kv[2]
-        }
-        /^==> Would upgrade/ { in_list = 1; print; next }
-        /^==>/ { in_list = 0 }
+    # Each "Would upgrade" list becomes a Package | Installed | New table.
+    print -r -- "$preview" | COLUMNS=$COLUMNS LINKS=$links awk "$_brewup_awk"'
+        function flush() { if (nr) table(nr, 3); nr = 0 }
+        BEGIN { hdr[1] = "Package"; hdr[2] = "Installed"; hdr[3] = "New" }
+        /^==> Would upgrade/ { flush(); in_list = 1; print; next }
+        /^==>/ { flush(); in_list = 0 }
         in_list && match($0, /-> [^ ]+/) {
             new = substr($0, RSTART + 3, RLENGTH - 3)
-            old = $0; sub(/ +-> .*/, "", old); sub(/.* /, "", old)
+            # installed versions: everything between the name and "->"; the last one is compared
+            installed = substr($0, length($1) + 2, RSTART - length($1) - 2); sub(/ +$/, "", installed)
+            old = installed; sub(/.* /, "", old)
             # compare only the dotted base version; "_1" revisions and ",abc123" cask builds are ignored
             o = old; sub(/[_,].*/, "", o)
             n = new; sub(/[_,].*/, "", n)
@@ -226,11 +312,15 @@ function brewup() {
             # package name gets the same color as its version bump, and links (OSC 8) to its GitHub releases
             name = $1
             label = color name "\033[0m"
-            if (name in url) label = "\033]8;;" url[name] "\033\\" label "\033]8;;\033\\"
-            print label substr($0, length(name) + 1, RSTART + 2 - length(name)) out substr($0, RSTART + RLENGTH)
+            if (name in url) label = osc8(url[name], label)
+            nr++
+            cell[nr, 1] = label;      vis[nr, 1] = length(name)
+            cell[nr, 2] = installed;  vis[nr, 2] = length(installed)
+            cell[nr, 3] = out;        vis[nr, 3] = length(new)
             next
         }
-        { print }
+        { flush(); print }
+        END { flush() }
     '
 
     print -P '\n%B%F{red}major%f%b  %B%F{yellow}minor%f%b  %F{green}patch%f  \e[2mrevision/build\e[0m'
@@ -253,7 +343,7 @@ if [[ ${chpwd_functions[(r)_auto_ls]} != "_auto_ls" ]]; then
     chpwd_functions+=(_auto_ls)
 fi
 
-# F-Sy-H chroma painting subcommands up to three levels deep (`gh pr checkout`,
+# fast-syntax-highlighting chroma painting subcommands up to three levels deep (`gh pr checkout`,
 # `docker compose up`), but only names the tool actually has. The built-in generic
 # chroma paints any first word. Valid names are parsed from `<cmd> [words] --help`
 # (or `<cmd> help [words]`) in the background and cached on disk for a week
@@ -311,7 +401,7 @@ function _fsh_chroma_subcmd() {
     local __first_call=$1 __wrd=$2 __start_pos=$3 __end_pos=$4
 
     if (( __first_call )); then
-        _fsh_state[chroma-subcmd-path]=${__wrd:t}
+        FAST_HIGHLIGHT[chroma-subcmd-path]=${__wrd:t}
         return 1
     elif (( in_redirection > 0 || this_word & 128 )) || [[ $__wrd == "<<<" || $__wrd == -*=* ]]; then
         return 1
@@ -321,7 +411,7 @@ function _fsh_chroma_subcmd() {
     (( next_word &= ~8192 ))
     [[ $__wrd == [[:alpha:]][[:alnum:]_-]# ]] || return 1
 
-    local key=${_fsh_state[chroma-subcmd-path]} names
+    local key=${FAST_HIGHLIGHT[chroma-subcmd-path]} names
     local file=$_fsh_subcmd_dir/${key// //}.list
     names=${_fsh_subcmd_cache[$key]}
     if [[ ( -z $names || $names == pending ) && -r $file ]]; then
@@ -335,18 +425,18 @@ function _fsh_chroma_subcmd() {
     fi
     [[ $names == *" $__wrd "* ]] || return 1
 
-    _fsh_state[chroma-subcmd-path]+=" $__wrd"
-    (( ${#${=_fsh_state[chroma-subcmd-path]}} < 4 )) && (( next_word |= 8192 ))
+    FAST_HIGHLIGHT[chroma-subcmd-path]+=" $__wrd"
+    (( ${#${=FAST_HIGHLIGHT[chroma-subcmd-path]}} < 4 )) && (( next_word |= 8192 ))
 
     (( __start = __start_pos - ${#PREBUFFER}, __end = __end_pos - ${#PREBUFFER}, __start >= 0 )) \
-        && reply+=("$__start $__end ${_fsh_styles[${_fsh_theme_name}subcommand]}")
+        && reply+=("$__start $__end ${FAST_HIGHLIGHT_STYLES[${FAST_THEME_NAME}subcommand]}")
     (( this_word = next_word ))
     _start_pos=$_end_pos
     return 0
 }
-if (( ${+_fsh_state} )); then
+if (( ${+FAST_HIGHLIGHT} )); then
     for cmd in $_fsh_subcmd_commands; do
-        _fsh_state[chroma-$cmd]=_fsh_chroma_subcmd
+        FAST_HIGHLIGHT[chroma-$cmd]=_fsh_chroma_subcmd
     done
     unset cmd
 fi
