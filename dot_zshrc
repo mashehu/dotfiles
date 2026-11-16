@@ -159,6 +159,47 @@ alias ghpr="GH_FORCE_TTY=100% gh pr list | fzf --ansi --preview 'GH_FORCE_TTY=10
 alias masked='maskedemail-cli --token $fastmail_token'
 alias python="python3"
 
+# gnew <branch> [base]: fetch upstream (origin if there is none) and branch off it directly,
+# without touching the local master/main/dev. Base defaults to <remote>/dev if it exists
+# (nf-core convention), else the remote's default branch.
+function gnew() {
+    [[ -n $1 ]] || { echo "usage: gnew <branch> [base]" >&2; return 1; }
+    local remote=upstream base=$2
+    git remote get-url upstream &>/dev/null || remote=origin
+    git fetch "$remote" || return
+    if [[ -z $base ]]; then
+        if git rev-parse --verify -q "$remote/dev" >/dev/null; then
+            base=$remote/dev
+        else
+            base=$(git rev-parse --abbrev-ref "$remote/HEAD" 2>/dev/null) \
+                || { git remote set-head "$remote" --auto >/dev/null \
+                     && base=$(git rev-parse --abbrev-ref "$remote/HEAD"); } \
+                || return
+        fi
+    elif [[ $base != */* ]]; then
+        base=$remote/$base
+    fi
+    git switch -c "$1" --no-track "$base"
+}
+
+# nfc <repo>: cd into ~/<repo> (or ~/nf-core_<repo>, e.g. modules, website, .github),
+# forking + cloning it into ~/<repo> first if neither exists.
+# Bare names are nf-core repos (nfc rnaseq); owner/repo and GitHub URLs work too.
+# gh sets the remotes up as origin = your fork, upstream = the original.
+function nfc() {
+    [[ -n $1 ]] || { echo "usage: nfc <repo|owner/repo|github-url>" >&2; return 1; }
+    local slug=${${1#https://github.com/}%.git}
+    slug=${slug%/}
+    [[ $slug == */* ]] || slug=nf-core/$slug
+    local dir=${slug:t}
+    [[ $slug == nf-core/* && ! -d ~/$dir && -d ~/nf-core_${dir#.} ]] && dir=nf-core_${dir#.}
+    if [[ ! -d ~/$dir ]]; then
+        (cd ~ && gh repo fork "$slug" --clone) || return
+    fi
+    cd ~/$dir
+}
+compdef '_files -W ~ -/' nfc
+
 function ezad() {
     if [ $# -eq 0 ]; then
         eza --icons --all --color=always --group-directories-first
@@ -181,12 +222,34 @@ function _brew_links() {
         | [.name, .full_name, .token, .full_token | strings] | unique[] | "\(.)\t\($u)"'
 }
 
-# awk prelude shared by brewup's filters: url[] from name<TAB>url lines in $LINKS,
-# osc8() for terminal hyperlinks, new_kind() for brew update's "New ..." sections, and
-# table() for a rounded box table fitted to $COLUMNS
-_brewup_awk='
+function _brew_cleanup() {
+    print -P "%B%F{blue}==>%f Running brew cleanup...%b"
+    brew cleanup
+}
+
+# awk prelude shared by brewup's and uvup's filters: url[] from name<TAB>url lines in $LINKS,
+# osc8() for terminal hyperlinks, bump() for semver-colored versions, and table() for a
+# rounded box table fitted to $COLUMNS
+_pkgup_awk='
     function osc8(u, t) { return "\033]8;;" u "\033\\" t "\033]8;;\033\\" }
-    function new_kind() { return /New Formulae/ ? "formula" : /New Casks/ ? "cask" : "" }
+    # Return new colored by how it differs from old: red = major, yellow = minor, green = patch,
+    # dim = only the suffix (the part matching regex sfx, e.g. a revision or build) changed.
+    # Only the part from the first changed component onward is colored. Sets bump_color.
+    function bump(old, new, sfx,   o, n, op, np, no, nn, i, idx, pos, base, suffix) {
+        o = old; sub(sfx, "", o)
+        n = new; sub(sfx, "", n)
+        no = split(o, op, "."); nn = split(n, np, ".")
+        idx = 0
+        for (i = 1; i <= (nn > no ? nn : no); i++)
+            if (op[i] != np[i]) { idx = i; break }
+        bump_color = idx == 1 ? "\033[1;31m" : idx == 2 ? "\033[1;33m" : idx ? "\033[32m" : "\033[2m"
+        pos = 1
+        for (i = 1; i < idx; i++) pos += length(np[i]) + 1
+        # base version (colored from pos on), then any suffix dimmed
+        base = substr(new, 1, length(n)); suffix = substr(new, length(n) + 1)
+        if (idx) return substr(base, 1, pos - 1) bump_color substr(base, pos) "\033[0m" (suffix != "" ? "\033[2m" suffix "\033[0m" : "")
+        return base bump_color suffix "\033[0m"
+    }
     BEGIN {
         n = split(ENVIRON["LINKS"], rows, "\n")
         for (i = 1; i <= n; i++) if (split(rows[i], kv, "\t") == 2) url[kv[1]] = kv[2]
@@ -231,18 +294,21 @@ function brewup() {
     setopt local_options pipefail
     # Stream brew update's output live (to stderr), except its "New Formulae"/"New Casks"
     # sections, which are collected as kind<TAB>name<TAB>description for the table below.
-    # HOMEBREW_COLOR keeps brew's colors although its stdout is a pipe.
+    # HOMEBREW_COLOR keeps brew's colors although its stdout is a pipe. 2>&1 because with a
+    # non-TTY stdout, brew update-report writes its whole report to stderr. (Piped, it also
+    # never marks one-time notices as shown, so those may repeat on every run.)
     local new
-    new=$(HOMEBREW_COLOR=1 brew update | awk "$_brewup_awk"'
-        /==>/ { kind = new_kind(); if (kind) next }
+    new=$(HOMEBREW_COLOR=1 brew update 2>&1 | awk "$_pkgup_awk"'
+        /==>/ { kind = /New Formulae/ ? "formula" : /New Casks/ ? "cask" : ""; if (kind) next }
         kind && match($0, /^[^: ]+/) { print kind "\t" substr($0, 1, RLENGTH) "\t" substr($0, RLENGTH + 3); next }
         { print > "/dev/stderr"; fflush() }') || return
 
     if [[ -n $new ]]; then
         # Look up homepages; formulae and casks separately, so an unresolvable name only
         # costs its own kind's links
-        local -a new_formulae=(${(f)"$(print -r -- "$new" | awk -F'\t' '$1 == "formula" { print $2 }')"})
-        local -a new_casks=(${(f)"$(print -r -- "$new" | awk -F'\t' '$1 == "cask" { print $2 }')"})
+        local -a new_lines=(${(f)new})
+        local -a new_formulae=(${${${(M)new_lines:#formula$'\t'*}#*$'\t'}%%$'\t'*})
+        local -a new_casks=(${${${(M)new_lines:#cask$'\t'*}#*$'\t'}%%$'\t'*})
         local new_links
         new_links=$({
             (( $#new_formulae )) && brew info --json=v2 --formula "${new_formulae[@]}"
@@ -250,7 +316,7 @@ function brewup() {
         } 2>/dev/null | _brew_links .homepage)
         # Table of new packages, names linked (OSC 8) to their homepage, falling back to
         # their formulae.brew.sh page (tap-qualified user/tap/name ones have none)
-        print -r -- "$new" | COLUMNS=$COLUMNS LINKS=$new_links awk -F'\t' "$_brewup_awk"'
+        print -r -- "$new" | COLUMNS=$COLUMNS LINKS=$new_links awk -F'\t' "$_pkgup_awk"'
             {
                 n = $2; link = n in url ? url[n] : n !~ /\// ? "https://formulae.brew.sh/" $1 "/" n : ""
                 label = "\033[1m" n "\033[0m"
@@ -272,8 +338,7 @@ function brewup() {
 
     if [[ $preview != *"Would upgrade"* ]]; then
         print -r -- "$preview"
-        print -P "%B%F{blue}==>%f Running brew cleanup...%b"; brew cleanup
-        return
+        _brew_cleanup; return
     fi
 
     local -a names
@@ -282,10 +347,8 @@ function brewup() {
     # one unresolvable name fails the whole lookup, so fall back to the (slower) full installed set
     links=$({ brew info --json=v2 "${names[@]}" || brew info --json=v2 --installed } 2>/dev/null | _brew_links '[.urls.stable.url, .urls.head.url, .url, .homepage] | repo | values | "https://github.com/\(.)/releases"')
 
-    # Color the new version: red = major, yellow = minor, green = patch, dim = revision/build only.
-    # Only the part from the first changed component onward is colored.
-    # Each "Would upgrade" list becomes a Package | Installed | New table.
-    print -r -- "$preview" | COLUMNS=$COLUMNS LINKS=$links awk "$_brewup_awk"'
+    # Each "Would upgrade" list becomes a Package | Installed | New table, new versions semver-colored
+    print -r -- "$preview" | COLUMNS=$COLUMNS LINKS=$links awk "$_pkgup_awk"'
         function flush() { if (nr) table(nr, 3); nr = 0 }
         BEGIN { hdr[1] = "Package"; hdr[2] = "Installed"; hdr[3] = "New" }
         /^==> Would upgrade/ { flush(); in_list = 1; print; next }
@@ -293,22 +356,10 @@ function brewup() {
         in_list && match($0, /-> [^ ]+/) {
             new = substr($0, RSTART + 3, RLENGTH - 3)
             # installed versions: everything between the name and "->"; the last one is compared
-            installed = substr($0, length($1) + 2, RSTART - length($1) - 2); sub(/ +$/, "", installed)
+            installed = substr($0, length($1) + 2, RSTART - length($1) - 2); gsub(/^[ \t]+|[ \t]+$/, "", installed)
             old = installed; sub(/.* /, "", old)
-            # compare only the dotted base version; "_1" revisions and ",abc123" cask builds are ignored
-            o = old; sub(/[_,].*/, "", o)
-            n = new; sub(/[_,].*/, "", n)
-            no = split(o, op, "."); nn = split(n, np, ".")
-            idx = 0
-            for (i = 1; i <= (nn > no ? nn : no); i++)
-                if (op[i] != np[i]) { idx = i; break }
-            color = idx == 1 ? "\033[1;31m" : idx == 2 ? "\033[1;33m" : idx ? "\033[32m" : "\033[2m"
-            pos = 1
-            for (i = 1; i < idx; i++) pos += length(np[i]) + 1
-            # base version (colored from pos on), then any revision/build suffix dimmed
-            base = substr(new, 1, length(n)); suffix = substr(new, length(n) + 1)
-            if (idx) out = substr(base, 1, pos - 1) color substr(base, pos) "\033[0m" (suffix != "" ? "\033[2m" suffix "\033[0m" : "")
-            else     out = base color suffix "\033[0m"
+            # "_1" revisions and ",abc123" cask builds count as suffix
+            out = bump(old, new, "[_,].*"); color = bump_color
             # package name gets the same color as its version bump, and links (OSC 8) to its GitHub releases
             name = $1
             label = color name "\033[0m"
@@ -327,7 +378,68 @@ function brewup() {
     local answer
     read -r "answer?Proceed with upgrade? [Y/n] "
     case $answer in
-        ""|[yY]|[yY]es) brew upgrade --yes "$@" && rm -f "${ZSH_EVALCACHE_DIR:-$HOME/.zsh-evalcache}"/init-*(N) && print -P "%B%F{blue}==>%f Running brew cleanup...%b" && brew cleanup ;;
+        ""|[yY]|[yY]es) brew upgrade --yes "$@" && rm -f "${ZSH_EVALCACHE_DIR:-$HOME/.zsh-evalcache}"/init-*(N) && _brew_cleanup ;;
+        *) echo "Aborted."; return 1 ;;
+    esac
+}
+
+# uv sync --upgrade, with a semver-colored preview of the lockfile changes. Arguments go to
+# uv sync (the preview always covers upgrading every package).
+function uvup() {
+    setopt local_options pipefail
+    local preview
+    preview=$(uv lock --upgrade --dry-run --color never 2>&1) || { print -r -- "$preview"; return 1 }
+
+    local -a names
+    names=(${(f)"$(print -r -- "$preview" | awk '$1 ~ /^(Update|Add|Remove)$/ && $3 ~ /^v/ { print $2 }')"})
+    if (( ! $#names )); then
+        print -r -- "$preview"
+        return
+    fi
+
+    # Link each package to its GitHub releases (from PyPI project URLs), else its PyPI page
+    local tmp=$(mktemp -d) n links
+    local -a args
+    for n in $names; args+=(-o "$tmp/$n" "https://pypi.org/pypi/$n/json")
+    curl -sfZ --parallel-max 16 "${args[@]}" 2>/dev/null
+    links=$(jq -r '
+        def repo: [.[] | strings | capture("github\\.com/(?<r>[^/]+/[^/#?]+)").r | sub("\\.git$"; "")
+                   | select(startswith("sponsors/") | not)] | first;
+        (input_filename | split("/") | last) as $n
+        | [(.info.project_urls // {})[], .info.home_page] | repo
+        | values | "\($n)\thttps://github.com/\(.)/releases"' $tmp/*(N.) 2>/dev/null)
+    rm -rf $tmp
+
+    print -r -- "$preview" | COLUMNS=$COLUMNS LINKS=$links awk "$_pkgup_awk"'
+        BEGIN { hdr[1] = "Package"; hdr[2] = "Locked"; hdr[3] = "New" }
+        $1 ~ /^(Update|Add|Remove)$/ && $3 ~ /^v/ {
+            name = $2
+            old = $1 == "Add" ? "" : $3;                     sub(/^v/, "", old)
+            new = $1 == "Update" ? $5 : $1 == "Add" ? $3 : ""; sub(/^v/, "", new)
+            # "+local" version labels count as suffix
+            if ($1 == "Update")   { out = bump(old, new, "[+].*"); color = bump_color; w = length(new) }
+            else if ($1 == "Add") { color = "\033[36m"; out = color new "\033[0m"; w = length(new) }
+            else                  { color = "\033[2;9m"; out = "\033[2mremoved\033[0m"; w = 7 }
+            # package name gets the same color as its version bump and links (OSC 8) to its releases
+            label = osc8(name in url ? url[name] : "https://pypi.org/project/" name "/", color name "\033[0m")
+            nr++
+            cell[nr, 1] = label; vis[nr, 1] = length(name)
+            cell[nr, 2] = old;   vis[nr, 2] = length(old)
+            cell[nr, 3] = out;   vis[nr, 3] = w
+            next
+        }
+        { print "\033[2m" $0 "\033[0m" }
+        END {
+            print "\033[1;34m==>\033[0m \033[1mWould update lockfile\033[0m"
+            table(nr, 3)
+        }
+    '
+
+    print -P '\n%B%F{red}major%f%b  %B%F{yellow}minor%f%b  %F{green}patch%f  \e[2mlocal label\e[0m  %F{cyan}added%f  \e[2;9mremoved\e[0m'
+    local answer
+    read -r "answer?Proceed with upgrade? [Y/n] "
+    case $answer in
+        ""|[yY]|[yY]es) uv sync --upgrade "$@" ;;
         *) echo "Aborted."; return 1 ;;
     esac
 }
