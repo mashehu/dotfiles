@@ -32,7 +32,7 @@
 [credential]
 	helper = osxkeychain
 [pull]
-	rebase = false
+	rebase = true
 [pager]
     diff = delta
     log = delta
@@ -53,3 +53,12 @@
 	gpgsign = true
 [rerere]
 	enabled = true
+[rebase]
+	autoStash = true
+	updateRefs = true
+[help]
+	autocorrect = prompt
+[absorb]
+	maxStack = 50
+	autoStageIfNothingStaged = true
+	oneFixupPerCommit = true

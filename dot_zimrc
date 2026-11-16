@@ -20,6 +20,7 @@ zmodule wfxr/forgit
 zmodule chrissicool/zsh-256color
 zmodule mroth/evalcache
 zmodule MichaelAquilina/zsh-you-should-use
+zmodule rosado-io/zsh-git-sweep
 
 # Oh My Zsh plugins (without completions)
 zmodule ohmyzsh/ohmyzsh -f 'plugins/bgnotify' -s 'plugins/bgnotify/bgnotify.plugin.zsh' -f 'plugins/extract' -s 'plugins/extract/extract.plugin.zsh'
