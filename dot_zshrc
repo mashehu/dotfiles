@@ -545,6 +545,7 @@ _evalcache thefuck --alias
 _evalcache op completion zsh
 _evalcache pixi completion --shell zsh
 _evalcache zoxide init zsh --cmd j
+_evalcache wt config shell init zsh # initialize worktrunk (to manage git worktrees)
 
 source "$HOME/.config/op/plugins.sh"
 
